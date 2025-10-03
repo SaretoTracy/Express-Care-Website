@@ -1,12 +1,18 @@
 import { Route } from "react-router-dom";
-import LandingPage from "../pages/LandingPage";
+import MainLayout from "../layouts/MainLayout";
+import { LandingPage } from "../pages/LandingPage";
 
 
-export default function PublicRoutes() {
+const PublicRoutes = () => {
   return (
     <>
-      <Route path="/" element={<LandingPage />} />
-   
+      <Route path="/" element={<MainLayout />}>
+        <Route index element={<LandingPage />} />
+        <Route path="home" element={<LandingPage />} />
+       
+      </Route>
     </>
   );
-}
+};
+
+export default PublicRoutes;
