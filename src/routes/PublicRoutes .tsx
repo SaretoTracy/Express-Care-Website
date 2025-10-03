@@ -2,6 +2,7 @@ import { Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import { LandingPage } from "../pages/LandingPage";
 import { CaregiverPage } from "../pages/CaregiverPage";
+import { ProviderLanding } from "../pages/ProviderPage";
 
 
 const PublicRoutes = () => {
@@ -11,6 +12,7 @@ const PublicRoutes = () => {
         <Route index element={<LandingPage />} />
         <Route path="home" element={<LandingPage />} />
         <Route path="caregiver" element={<CaregiverPage />} />
+        <Route path="provider" element={<ProviderLanding />} />
       </Route>
     </>
   );
