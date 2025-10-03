@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FaHeartbeat, FaUserNurse, FaHospitalUser, FaChartLine, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import care from '/care5.jpg';
-import fourLanding from '/four-landing.jpg';
-import threeLanding from '/three-landing.jpg';
+import care from '../assets/images/two.jpg';
+import fourLanding from '../assets/images/landing-eight.png';
+import threeLanding from '../assets/images/caregiver1.jpg';
 import { YellowLink } from '../components/ButtonComponents/YellowLink'
 
 // Constants

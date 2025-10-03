@@ -1,17 +1,26 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import { NavBar } from './components/Navbar/Navbar'
+// App.tsx
+import PublicRoutes from "./routes/PublicRoutes ";
+import { ToastContainer } from "react-toastify";
+import { LoadingSpinner } from "./components/LoadingSpinner";
+import { SwitchProvider } from "./context/GeneralContext";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-   <NavBar />
-    </>
-  )
+    <SwitchProvider>
+      <LoadingSpinner />
+
+      <Routes>
+        {/* Public Routes */}
+        {PublicRoutes()}
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      <ToastContainer />
+    </SwitchProvider>
+  );
 }
 
-export default App
+export default App;
