@@ -6,6 +6,7 @@ import { ProviderLanding } from "../pages/ProviderPage";
 import { LoginPage } from "../pages/AuthPages/LoginPage";
 import { SignupPage } from "../pages/AuthPages/SignupPage";
 import ComingSoon from "../pages/ComingSoon";
+import { ProviderSignup } from "../pages/SignUpPages/ProviderSignup";
 
 
 const PublicRoutes = () => {
@@ -19,6 +20,7 @@ const PublicRoutes = () => {
         <Route path="login" element={<LoginPage />} />
         <Route path="signup" element={<SignupPage />} />
         <Route path="comingsoon" element={<ComingSoon />} />
+        <Route path="provider/signup" element={<ProviderSignup />} />
       </Route>
     </>
   );

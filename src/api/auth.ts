@@ -1,11 +1,10 @@
 import axios from "axios";
-import { ILogin } from "../Interfaces/ILogin";
-import { ILoginRes } from "../Interfaces/apiResponse/ILoginRes";
-import { authUrl, urlBase } from "../intercepters/axios";
-import { ICaregiverSignup } from "../Interfaces/ICaregiverSignUp";
-import { ISignup } from "../Interfaces/ISignup";
-import { ICaregiverAddress } from "../Interfaces/IAddress";
-import { IHomeInfo } from "../Interfaces/IProviderSignup";
+import type { ILoginRes } from "../Interfaces/apiREsponse/ILoginRes";
+import type { ICaregiverAddress } from "../Interfaces/IAddress";
+import type { ILogin } from "../Interfaces/Ilogin";
+import type { IHomeInfo } from "../Interfaces/IProviderSignUp";
+import type { ISignup } from "../Interfaces/ISignUp";
+
 export const login = async (data: ILogin) => {
   const response = await authUrl.post<ILoginRes>("login", data, {
     headers: { Authorization: "" },
