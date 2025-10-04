@@ -3,6 +3,8 @@ import { YellowLink } from "../components/ButtonComponents/YellowLink";
 import caregivers from "../assets/images/caregiver1.jpg";
 
 export const CaregiverPage: React.FC<{}> = () => {
+   const yellowColor = "#FF9923";
+  const bgColor = "#557a95"
   return (
     <div className="bg-gradient-to-b from-white to-blue-50 min-h-screen py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -83,7 +85,11 @@ export const CaregiverPage: React.FC<{}> = () => {
         </div>
         
         {/* Call to Action */}
-        <div className="bg-gradient-to-r from-yellow-500 to-yellow-400 rounded-xl p-8 text-center shadow-lg">
+        <div className=" rounded-xl p-8 text-center shadow-lg"
+         style={{ 
+          backgroundColor: bgColor,
+         
+        }}>
           <h2 className="text-2xl font-bold text-white mb-4">Ready to Start Your Caregiving Journey?</h2>
           <p className="text-white text-lg mb-6 max-w-2xl mx-auto">
             Create your profile today and get matched with caregiving opportunities that value your skills and compassion.

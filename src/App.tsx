@@ -4,15 +4,18 @@ import { ToastContainer } from "react-toastify";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { SwitchProvider } from "./context/GeneralContext";
 import PublicRoutes from "./routes/PublicRoutes ";
+import ScrollToTop from "./components/ScrollToTop";
 
 
 function App() {
   return (
     <>
+    
     <SwitchProvider>
       <LoadingSpinner />
     
     <Router>
+      <ScrollToTop />
       <Routes>
         {/* Public Routes */}
         {PublicRoutes()}

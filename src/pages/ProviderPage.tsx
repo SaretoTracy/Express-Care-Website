@@ -3,6 +3,8 @@ import { YellowLink } from "../components/ButtonComponents/YellowLink";
 import care5 from "/care5.jpg";
 
 export const ProviderLanding: React.FC<{}> = () => {
+  const yellowColor = "#FF9923";
+  const bgColor = "#557a95";
   return (
     <div className="bg-gradient-to-b from-white to-blue-50 min-h-screen py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -11,7 +13,11 @@ export const ProviderLanding: React.FC<{}> = () => {
          
           <div className="relative order-2 md:order-1">
             <div className="absolute -top-4 -left-4 w-24 h-24 bg-blue-400 opacity-20 rounded-full"></div>
-            <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-yellow-400 opacity-20 rounded-full"></div>
+            <div className="absolute -bottom-4 -right-4 w-32 h-32 opacity-20 rounded-full"
+             style={{ 
+              backgroundColor: bgColor,
+             
+            }}></div>
             
             <img 
               src={care5} 
@@ -132,7 +138,11 @@ export const ProviderLanding: React.FC<{}> = () => {
         </div>
         
         {/* Call to Action */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl p-8 text-center shadow-lg">
+        <div className=" rounded-xl p-8 text-center shadow-lg"
+         style={{ 
+          backgroundColor: bgColor,
+         
+        }}>
           <h2 className="text-2xl font-bold text-white mb-4">Ready to Find Your Next Great Hire?</h2>
           <p className="text-white text-lg mb-6 max-w-2xl mx-auto">
             Join hundreds of healthcare agencies who've streamlined their recruitment process and found quality caregivers through our platform.

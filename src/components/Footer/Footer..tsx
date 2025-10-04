@@ -95,7 +95,7 @@ export const Footer = () => {
               <div className="bg-blue-600 p-2 rounded-full mr-3 group-hover:bg-yellow-400 transition-colors duration-300">
                 <Home size={18} className="text-white" />
               </div>
-              <span>Westlands, Nairobi 10012, Kenya</span>
+              <span>Washington, D.C</span>
             </li>
             <li className="flex items-center group hover:text-yellow-400 transition-colors duration-300">
               <div className="bg-blue-600 p-2 rounded-full mr-3 group-hover:bg-yellow-400 transition-colors duration-300">
@@ -120,7 +120,7 @@ export const Footer = () => {
       <div className="container mx-auto grid md:grid-cols-2 px-4 py-4">
         <section className="flex items-center">
           <small className="flex items-center flex-wrap">
-            Copyright &copy; <span className="text-yellow-400 mx-1">2022</span> 
+            Copyright &copy; <span className="text-yellow-400 mx-1">2025</span> 
             All Rights Reserved by 
             <span className="flex items-center mx-1 text-yellow-400">
               <Heart size={14} className="mx-1 animate-pulse text-red-400" /> 

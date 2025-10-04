@@ -13,6 +13,7 @@ import { CaregiverSignup } from "../pages/SignUpPages/CaregverSignup";
 const PublicRoutes = () => {
   return (
     <>
+    
       <Route path="/" element={<MainLayout />}>
         <Route index element={<LandingPage />} />
         <Route path="home" element={<LandingPage />} />
