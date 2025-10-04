@@ -7,6 +7,7 @@ import { LoginPage } from "../pages/AuthPages/LoginPage";
 import { SignupPage } from "../pages/AuthPages/SignupPage";
 import ComingSoon from "../pages/ComingSoon";
 import { ProviderSignup } from "../pages/SignUpPages/ProviderSignup";
+import { CaregiverSignup } from "../pages/SignUpPages/CaregverSignup";
 
 
 const PublicRoutes = () => {
@@ -21,6 +22,7 @@ const PublicRoutes = () => {
         <Route path="signup" element={<SignupPage />} />
         <Route path="comingsoon" element={<ComingSoon />} />
         <Route path="provider/signup" element={<ProviderSignup />} />
+        <Route path="caregiver/signup" element={<CaregiverSignup />} />
       </Route>
     </>
   );
