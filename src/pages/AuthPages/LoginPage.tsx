@@ -1,13 +1,10 @@
 
 
-import React, { useContext, useEffect, useState } from "react";
+import { useState } from "react";
 import logo from "../../assets/images/logo.png";
-import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { ErrorValidation } from "../../components/ErrorValidation";
-import { SwitchToggleContext } from "../../context/GeneralContext";
-import { Eye, EyeOff, Mail, Lock, LogIn, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, LogIn } from "lucide-react";
 
 export const LoginPage = () => {
     const navigate = useNavigate();
@@ -18,7 +15,6 @@ export const LoginPage = () => {
     const {
       register,
       handleSubmit,
-      formState: { errors },
     } = useForm();
   
     const handleLoginSubmit = () => {

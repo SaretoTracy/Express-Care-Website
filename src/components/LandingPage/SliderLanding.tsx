@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FaHeartbeat, FaUserNurse, FaHospitalUser, FaChartLine, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import care from '/care5.jpg';
-import fourLanding from '/four-landing.jpg';
-import threeLanding from '/three-landing.jpg';
+import care from '../../assets/care5.jpg';
+import fourLanding from '../../assets/four-landing.jpg';
+import threeLanding from '../../assets/three-landing.jpg';
 import { YellowLink } from '../ButtonComponents/YellowLink';
+import type { IconType } from 'react-icons';
 
 // Constants
 const COLORS = {
@@ -24,7 +25,7 @@ interface SlideData {
 interface TabData {
   id: string;
   label: string;
-  icon: React.ComponentType;
+  icon: IconType;
   content: {
     title: string;
     description: string;

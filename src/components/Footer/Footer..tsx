@@ -1,21 +1,21 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "../../assets/images/logo2.png";
-import { 
-  Facebook, 
-  Linkedin, 
-  Home, 
-  Mail, 
-  Phone, 
-  ArrowRight, 
-  Heart
+import {
+  Facebook,
+  Linkedin,
+  Home,
+  Mail,
+  Phone,
+  ArrowRight,
+  Heart,
 } from "lucide-react";
 
 export const Footer = () => {
   const [hovered, setHovered] = useState({
     getHired: false,
     findCaregivers: false,
-    socials: { facebook: false, linkedin: false }
+    socials: { facebook: false, linkedin: false },
   });
 
   return (
@@ -56,30 +56,52 @@ export const Footer = () => {
         <section className="md:justify-self-center pl-4 md:pl-0 mb-8 transition-all duration-300 hover:scale-105 transform">
           <h3 className="text-yellow-400 font-bold text-3xl mb-4">SERVICES</h3>
           <ul className="flex flex-col space-y-3 font-medium text-lg">
-            <li 
+            <li
               className="flex items-center group"
-              onMouseEnter={() => setHovered(prev => ({...prev, getHired: true}))}
-              onMouseLeave={() => setHovered(prev => ({...prev, getHired: false}))}
+              onMouseEnter={() =>
+                setHovered((prev) => ({ ...prev, getHired: true }))
+              }
+              onMouseLeave={() =>
+                setHovered((prev) => ({ ...prev, getHired: false }))
+              }
             >
-              <ArrowRight 
-                className={`mr-2 transition-all duration-300 ${hovered.getHired ? 'text-yellow-400 translate-x-1' : 'text-white'}`} 
-                size={18} 
+              <ArrowRight
+                className={`mr-2 transition-all duration-300 ${
+                  hovered.getHired
+                    ? "text-yellow-400 translate-x-1"
+                    : "text-white"
+                }`}
+                size={18}
               />
-              <Link to="/caregiver" className="relative overflow-hidden group-hover:text-yellow-400 transition-colors duration-300">
+              <Link
+                to="/caregiver"
+                className="relative overflow-hidden group-hover:text-yellow-400 transition-colors duration-300"
+              >
                 Get Hired
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-yellow-400 transition-all duration-300 group-hover:w-full"></span>
               </Link>
             </li>
-            <li 
-              className="flex items-center group" 
-              onMouseEnter={() => setHovered(prev => ({...prev, findCaregivers: true}))}
-              onMouseLeave={() => setHovered(prev => ({...prev, findCaregivers: false}))}
+            <li
+              className="flex items-center group"
+              onMouseEnter={() =>
+                setHovered((prev) => ({ ...prev, findCaregivers: true }))
+              }
+              onMouseLeave={() =>
+                setHovered((prev) => ({ ...prev, findCaregivers: false }))
+              }
             >
-              <ArrowRight 
-                className={`mr-2 transition-all duration-300 ${hovered.findCaregivers ? 'text-yellow-400 translate-x-1' : 'text-white'}`} 
-                size={18} 
+              <ArrowRight
+                className={`mr-2 transition-all duration-300 ${
+                  hovered.findCaregivers
+                    ? "text-yellow-400 translate-x-1"
+                    : "text-white"
+                }`}
+                size={18}
               />
-              <Link to="/provider" className="relative overflow-hidden group-hover:text-yellow-400 transition-colors duration-300">
+              <Link
+                to="/provider"
+                className="relative overflow-hidden group-hover:text-yellow-400 transition-colors duration-300"
+              >
                 Find Caregivers
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-yellow-400 transition-all duration-300 group-hover:w-full"></span>
               </Link>
@@ -120,35 +142,59 @@ export const Footer = () => {
       <div className="container mx-auto grid md:grid-cols-2 px-4 py-4">
         <section className="flex items-center">
           <small className="flex items-center flex-wrap">
-            Copyright &copy; <span className="text-yellow-400 mx-1">2025</span> 
-            All Rights Reserved by 
+            Copyright &copy; <span className="text-yellow-400 mx-1">2025</span>
+            All Rights Reserved by
             <span className="flex items-center mx-1 text-yellow-400">
-              <Heart size={14} className="mx-1 animate-pulse text-red-400" /> 
+              <Heart size={14} className="mx-1 animate-pulse text-red-400" />
               Express Care Team
             </span>
           </small>
         </section>
-        
+
         {/* Social Icons */}
         <section className="flex md:justify-end justify-center my-3 md:my-0 text-yellow-400 text-xl space-x-4">
-          <div 
+          <div
             className="hover:scale-125 transition-transform duration-300 cursor-pointer"
-            onMouseEnter={() => setHovered(prev => ({...prev, socials: {...prev.socials, facebook: true}}))}
-            onMouseLeave={() => setHovered(prev => ({...prev, socials: {...prev.socials, facebook: false}}))}
+            onMouseEnter={() =>
+              setHovered((prev) => ({
+                ...prev,
+                socials: { ...prev.socials, facebook: true },
+              }))
+            }
+            onMouseLeave={() =>
+              setHovered((prev) => ({
+                ...prev,
+                socials: { ...prev.socials, facebook: false },
+              }))
+            }
           >
-            <Facebook 
-              size={24} 
-              className={`transition-all duration-300 ${hovered.socials.facebook ? 'text-blue-300' : 'text-yellow-400'}`}
+            <Facebook
+              size={24}
+              className={`transition-all duration-300 ${
+                hovered.socials.facebook ? "text-blue-300" : "text-yellow-400"
+              }`}
             />
           </div>
-          <div 
+          <div
             className="hover:scale-125 transition-transform duration-300 cursor-pointer"
-            onMouseEnter={() => setHovered(prev => ({...prev, socials: {...prev.socials, linkedin: true}}))}
-            onMouseLeave={() => setHovered(prev => ({...prev, socials: {...prev.socials, linkedin: false}}))}
+            onMouseEnter={() =>
+              setHovered((prev) => ({
+                ...prev,
+                socials: { ...prev.socials, linkedin: true },
+              }))
+            }
+            onMouseLeave={() =>
+              setHovered((prev) => ({
+                ...prev,
+                socials: { ...prev.socials, linkedin: false },
+              }))
+            }
           >
-            <Linkedin 
-              size={24} 
-              className={`transition-all duration-300 ${hovered.socials.linkedin ? 'text-blue-300' : 'text-yellow-400'}`}
+            <Linkedin
+              size={24}
+              className={`transition-all duration-300 ${
+                hovered.socials.linkedin ? "text-blue-300" : "text-yellow-400"
+              }`}
             />
           </div>
         </section>

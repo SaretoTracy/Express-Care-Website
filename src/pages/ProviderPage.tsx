@@ -1,9 +1,9 @@
 import React from "react";
 import { YellowLink } from "../components/ButtonComponents/YellowLink";
-import care5 from "/care5.jpg";
+import care5 from "../assets/care5.jpg";
 
 export const ProviderLanding: React.FC<{}> = () => {
-  const yellowColor = "#FF9923";
+  // const yellowColor = "#FF9923";
   const bgColor = "#557a95";
   return (
     <div className="bg-gradient-to-b from-white to-blue-50 min-h-screen py-12">

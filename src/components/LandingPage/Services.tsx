@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 
 const Services = () => {
   // Track which service card is being hovered
-  const [hoveredCard, setHoveredCard] = useState(null);
+  const [hoveredCard, setHoveredCard] = useState<number|null>(null);
   // Track if elements should be visible (for animation on mount)
   const [isVisible, setIsVisible] = useState(false);
   // Track if we've scrolled to the services section
@@ -79,7 +79,7 @@ const Services = () => {
                           ${hoveredCard === card.id ? 'shadow-xl transform -translate-y-2' : 'shadow hover:shadow-md'} 
                           ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
               style={{ transitionDelay: `${index * 150}ms` }}
-              onMouseEnter={() => setHoveredCard(card.id)}
+              onMouseEnter={() => (setHoveredCard(card.id))}
               onMouseLeave={() => setHoveredCard(null)}
             >
               <div className={`p-4 rounded-full mb-6 ${hoveredCard === card.id ? 'bg-gray-100 animate-pulse' : 'bg-gray-50'}`}>

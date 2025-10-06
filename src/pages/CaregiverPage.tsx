@@ -3,7 +3,7 @@ import { YellowLink } from "../components/ButtonComponents/YellowLink";
 import caregivers from "../assets/images/caregiver1.jpg";
 
 export const CaregiverPage: React.FC<{}> = () => {
-   const yellowColor = "#FF9923";
+  //  const yellowColor = "#FF9923";
   const bgColor = "#557a95"
   return (
     <div className="bg-gradient-to-b from-white to-blue-50 min-h-screen py-12">
