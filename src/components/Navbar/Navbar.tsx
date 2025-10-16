@@ -34,24 +34,35 @@ export const NavBar: React.FC = () => {
 
         {/* Center: Navigation Links */}
         <div className="hidden lg:flex flex-1 justify-center items-center space-x-12 font-semibold text-yellow-400">
-          {["Home", "Caregivers", "Providers"].map((item, idx) => {
-            const path =
-              item === "Home"
-                ? "/"
-                : `/${item.toLowerCase().replace(" ", "")}`;
-            return (
-              <Link
-                key={idx}
-                to={path}
-                className="relative group text-lg tracking-wide"
-              >
-                <span className="group-hover:text-white transition-colors duration-300">
-                  {item}
-                </span>
-                <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-yellow-400 transition-all duration-300 group-hover:w-full"></span>
-              </Link>
-            );
-          })}
+          <Link
+            to="/"
+            className="relative group text-lg tracking-wide"
+          >
+            <span className="group-hover:text-white transition-colors duration-300">
+              Home
+            </span>
+            <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-yellow-400 transition-all duration-300 group-hover:w-full"></span>
+          </Link>
+
+          <Link
+            to="/caregiver"
+            className="relative group text-lg tracking-wide"
+          >
+            <span className="group-hover:text-white transition-colors duration-300">
+              Caregiver
+            </span>
+            <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-yellow-400 transition-all duration-300 group-hover:w-full"></span>
+          </Link>
+
+          <Link
+            to="/provider"
+            className="relative group text-lg tracking-wide"
+          >
+            <span className="group-hover:text-white transition-colors duration-300">
+              Provider
+            </span>
+            <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-yellow-400 transition-all duration-300 group-hover:w-full"></span>
+          </Link>
         </div>
 
         {/* Right: Auth Buttons */}
@@ -124,22 +135,15 @@ export const NavBar: React.FC = () => {
             </button>
 
             {/* Mobile Links */}
-            {["Home", "Caregivers", "Providers"].map((item, idx) => {
-              const path =
-                item === "Home"
-                  ? "/"
-                  : `/${item.toLowerCase().replace(" ", "")}`;
-              return (
-                <Link
-                  key={idx}
-                  to={path}
-                  onClick={() => setMenuOpen(false)}
-                  className="hover:text-white transition"
-                >
-                  {item}
-                </Link>
-              );
-            })}
+            <Link to="/" onClick={() => setMenuOpen(false)} className="hover:text-white transition">
+              Home
+            </Link>
+            <Link to="/caregiver" onClick={() => setMenuOpen(false)} className="hover:text-white transition">
+              Caregiver
+            </Link>
+            <Link to="/provider" onClick={() => setMenuOpen(false)} className="hover:text-white transition">
+              Provider
+            </Link>
 
             {/* Auth Buttons */}
             <div className="flex flex-col space-y-4 mt-6">
