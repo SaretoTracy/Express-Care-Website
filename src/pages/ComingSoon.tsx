@@ -1,7 +1,7 @@
 // src/pages/ComingSoon.tsx
 import React from "react";
 import { motion } from "framer-motion";
-import { Wrench, Rocket, Sparkles } from "lucide-react";
+import { Wrench, Sparkles } from "lucide-react";
 
 const ComingSoon: React.FC = () => {
   return (

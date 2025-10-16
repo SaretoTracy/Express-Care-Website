@@ -29,7 +29,7 @@ export const CaregiverSignup: React.FC = () => {
     setPhoneNumber(formatted);
   };
 
-  const handleSignupSubmit: SubmitHandler<ICaregiverSignup> = (data) => {
+  const handleSignupSubmit: SubmitHandler<ICaregiverSignup> = () => {
   
     switchSpinnerOn();
     

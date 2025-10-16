@@ -1,9 +1,10 @@
-import axios from "axios";
+
 import type { ILoginRes } from "../Interfaces/apiREsponse/ILoginRes";
 import type { ICaregiverAddress } from "../Interfaces/IAddress";
 import type { ILogin } from "../Interfaces/Ilogin";
 import type { IHomeInfo } from "../Interfaces/IProviderSignUp";
 import type { ISignup } from "../Interfaces/ISignUp";
+import { authUrl, urlBase } from "../intercepters/axios";
 
 export const login = async (data: ILogin) => {
   const response = await authUrl.post<ILoginRes>("login", data, {

@@ -1,5 +1,5 @@
 import React from 'react'
-import spinner from '../../public/loader-unscreen.gif'
+import spinner from '../assets/loader-unscreen.gif'
 import { useContext } from 'react';
 import { SwitchToggleContext } from '../context/GeneralContext';
 

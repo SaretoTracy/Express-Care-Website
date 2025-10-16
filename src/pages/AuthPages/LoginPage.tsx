@@ -1,61 +1,87 @@
-
-
-import React, { useContext, useEffect, useState } from "react";
+import { useState } from "react";
 import logo from "../../assets/images/logo.png";
-import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { ErrorValidation } from "../../components/ErrorValidation";
-import { SwitchToggleContext } from "../../context/GeneralContext";
-import { Eye, EyeOff, Mail, Lock, LogIn, AlertCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { Eye, EyeOff, Mail, Lock, LogIn } from "lucide-react";
 
 export const LoginPage = () => {
-    const navigate = useNavigate();
-    
-    const [showPassword, setShowPassword] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
-  
-    const {
-      register,
-      handleSubmit,
-      formState: { errors },
-    } = useForm();
-  
-    const handleLoginSubmit = () => {
-      navigate("/comingsoon");
-    };
-  
-    const togglePasswordVisibility = () => {
-      setShowPassword(!showPassword);
-    };
-  
+  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const { register, handleSubmit } = useForm();
+
+  const handleLoginSubmit = () => {
+    navigate("/comingsoon");
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 30 },
+    visible: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      transition: { delay: i * 0.2, duration: 0.6, ease: "easeOut" },
+    }),
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-10">
-      <div className="w-full max-w-md">
-        <form
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-10 px-4">
+      <motion.div
+        className="w-full max-w-md"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        <motion.form
           onSubmit={handleSubmit(handleLoginSubmit)}
           className="bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 transform hover:scale-[1.01]"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: {
+              transition: { staggerChildren: 0.15 },
+            },
+          }}
         >
-          {/* Card Header with Logo */}
-          <div className="bg-[#557a95] pt-6 pb-4 px-6">
+          {/* Header */}
+          <motion.div
+            className="bg-[#557a95] pt-6 pb-4 px-6"
+            variants={fadeInUp}
+            custom={0}
+          >
             <div className="flex justify-center">
-              <img 
-                className="w-48 object-contain transition-all duration-300 hover:scale-105" 
-                src={logo} 
-                alt="logo" 
+              <motion.img
+                className="w-44 sm:w-52 object-contain"
+                src={logo}
+                alt="logo"
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.3 }}
               />
             </div>
-          </div>
-          
-          {/* Card Body */}
+          </motion.div>
+
+          {/* Body */}
           <div className="p-8">
-            <h3 className="text-center font-bold text-2xl text-gray-800 mb-6">
+            <motion.h3
+              className="text-center font-bold text-2xl sm:text-3xl text-gray-800 mb-6"
+              variants={fadeInUp}
+              custom={1}
+            >
               Sign In
-            </h3>
-            
-            {/* Email Field */}
-            <div className="mb-5">
-              <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
+            </motion.h3>
+
+            {/* Email */}
+            <motion.div className="mb-5" variants={fadeInUp} custom={2}>
+              <label
+                htmlFor="email"
+                className="block font-medium mb-2"
+                style={{ color: "#557a95" }}
+              >
                 Email
               </label>
               <div className="relative">
@@ -69,11 +95,15 @@ export const LoginPage = () => {
                   {...register("email")}
                 />
               </div>
-            </div>
+            </motion.div>
 
-            {/* Password Field */}
-            <div className="mb-6">
-              <label htmlFor="password" className="block text-gray-700 font-medium mb-2">
+            {/* Password */}
+            <motion.div className="mb-6" variants={fadeInUp} custom={3}>
+              <label
+                htmlFor="password"
+                className="block font-medium mb-2"
+                style={{ color: "#557a95" }}
+              >
                 Password
               </label>
               <div className="relative">
@@ -94,25 +124,48 @@ export const LoginPage = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Submit Button */}
-            <button
+            {/* Submit */}
+            <motion.button
               type="submit"
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
+              variants={fadeInUp}
+              custom={4}
               className={`w-full py-3 rounded-lg flex items-center justify-center transition-all duration-300 ${
-                isHovered 
-                  ? "bg-gradient-to-r from-amber-500 to-yellow-400" 
+                isHovered
+                  ? "bg-gradient-to-r from-amber-500 to-yellow-400"
                   : "bg-gradient-to-r from-yellow-400 to-amber-500"
               } text-white font-medium shadow-md hover:shadow-lg active:shadow-sm active:translate-y-0.5`}
             >
-              <LogIn size={18} className={`mr-2 transition-transform duration-300 ${isHovered ? "translate-x-1" : ""}`} />
+              <LogIn
+                size={18}
+                className={`mr-2 transition-transform duration-300 ${
+                  isHovered ? "translate-x-1" : ""
+                }`}
+              />
               Sign in
-            </button>
+            </motion.button>
+
+            {/* Signup Link */}
+            <motion.p
+              variants={fadeInUp}
+              custom={5}
+              className="text-center text-sm mt-6 text-gray-600"
+            >
+              Don’t have an account?{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/signup")}
+                className="font-medium underline text-[#557a95] hover:text-[#335a73] transition-colors duration-200"
+              >
+                Sign up here
+              </button>
+            </motion.p>
           </div>
-        </form>
-      </div>
+        </motion.form>
+      </motion.div>
     </div>
   );
 };

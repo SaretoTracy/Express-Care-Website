@@ -1,11 +1,11 @@
-
 import axios from "axios";
-import config from "../config";
-// axios.defaults.baseURL = "http://localhost:8080/api/v1/";
-const apiEndPoint =
+axios.defaults.baseURL = "http://localhost:8080/api/v1/";
+/*const apiEndPoint =
   process.env.NODE_ENV === "development"
     ? config.development.baseurl
-    : config.production.baseurl;
+    : config.production.baseurl;*/
+  
+  const apiEndPoint="http://localhost:8080"
 
 export const urlBase = axios.create({
   baseURL: `${apiEndPoint}/api/v1/`, //all end points that require refreshertoken
