@@ -42,7 +42,7 @@ export const Footer = () => {
           </h3>
           <p className="text-gray-100 mb-6 leading-relaxed text-sm sm:text-base">
             Millions of people are searching for jobs, salary information,
-            company reviews, and interview questions. WorkLinks makes it
+            company reviews, and interview questions. Express care team makes it
             possible for caregivers to be considered for employment.
           </p>
           <img
