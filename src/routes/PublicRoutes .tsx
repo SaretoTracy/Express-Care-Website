@@ -4,10 +4,10 @@ import { LandingPage } from "../pages/LandingPage";
 import { CaregiverPage } from "../pages/CaregiverPage";
 import { ProviderLanding } from "../pages/ProviderPage";
 import { LoginPage } from "../pages/AuthPages/LoginPage";
-import { SignupPage } from "../pages/AuthPages/SignupPage";
-import ComingSoon from "../pages/ComingSoon";
-import { ProviderSignup } from "../pages/SignUpPages/ProviderSignup";
-import { CaregiverSignup } from "../pages/SignUpPages/CaregverSignup";
+import { SignupPage } from "../pages/Mainwebpages/SignupPage";
+import ComingSoon from "../pages/Mainwebpages/ComingSoon";
+import { ProviderSignup } from "../pages/AuthPages/ProviderSignup";
+import { CaregiverSignup } from "../pages/AuthPages/CaregverSignup";
 
 
 const PublicRoutes = () => {
