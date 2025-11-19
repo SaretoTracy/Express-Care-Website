@@ -74,14 +74,14 @@ export const ProviderSignup: React.FC = () => {
     try {
       const validatedHome = providerHomeInfoValidator.parse(data);
 
-      // Map Step1 + Step2 to backend payload
+      //Step1 + Step2 to backend payload
       const payload: IProviderSignup = {
         first_name: step1Data.first_name,
         last_name: step1Data.last_name,
         email: step1Data.email,
         password: step1Data.password,
         confirmPassword: step1Data.confirm_password,
-        phone_number: validatedHome.adult_home_phone, // backend expects this
+        phone_number: validatedHome.adult_home_phone, 
         job_title: step1Data.job_title,
         adult_home_name: validatedHome.adult_home_name,
         adult_home_email: validatedHome.adult_home_email,

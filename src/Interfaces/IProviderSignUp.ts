@@ -3,9 +3,9 @@ export interface IProviderSignup {
   last_name: string;
   email: string;
   password: string;
-  confirmPassword: string;      // camelCase for internal usage
-  phone_number: string;         // backend expects snake_case
-  job_title: string;            // must be included
+  confirmPassword: string;
+  phone_number: string;         
+  job_title: string;            
   adult_home_name: string;
   adult_home_email: string;
   adult_home_phone: string;
