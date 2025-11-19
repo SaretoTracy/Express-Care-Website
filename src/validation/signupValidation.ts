@@ -76,3 +76,12 @@ export const providerRepValidator = z.object({
     adult_home_street: z.string().min(1, "Street is required"),
     adult_home_zipcode: z.string().min(1, "Zipcode is required"),
   });
+
+  //login form validation
+
+export const loginValidator = z.object({
+    username: z.string().email("Invalid email"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+  });
+  
+  export type ILogin = z.infer<typeof loginValidator>;

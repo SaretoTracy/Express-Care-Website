@@ -1,13 +1,14 @@
 import { Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
-import { LandingPage } from "../pages/LandingPage";
-import { CaregiverPage } from "../pages/CaregiverPage";
-import { ProviderLanding } from "../pages/ProviderPage";
+
 import { LoginPage } from "../pages/AuthPages/LoginPage";
 import { SignupPage } from "../pages/Mainwebpages/SignupPage";
 import ComingSoon from "../pages/Mainwebpages/ComingSoon";
 import { ProviderSignup } from "../pages/AuthPages/ProviderSignup";
 import { CaregiverSignup } from "../pages/AuthPages/CaregverSignup";
+import { CaregiverPage } from "../pages/Mainwebpages/CaregiverPage";
+import { LandingPage } from "../pages/Mainwebpages/LandingPage";
+import ProviderLanding from "../pages/ProviderPages/ProviderLanding";
 
 
 const PublicRoutes = () => {
