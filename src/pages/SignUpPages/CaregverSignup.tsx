@@ -7,10 +7,11 @@ import { formPhoneNumber } from "../../components/globalFunctions";
 import { toast } from "react-toastify";
 import { SwitchToggleContext } from "../../context/GeneralContext";
 import type { ICaregiverSignup } from "../../Interfaces/ICaregiverSignUp";
+import { caregiverSignupValidator } from "../../validation/signupValidation";
+import { registerCaregiver } from "../../services/authService";
 
 export const CaregiverSignup: React.FC = () => {
   const navigate = useNavigate();
-
   const context = useContext(SwitchToggleContext);
   const switchSpinnerOn = context?.switchSpinnerOn ?? (() => {});
   const switchSpinnerOff = context?.switchSpinnerOff ?? (() => {});
@@ -29,16 +30,47 @@ export const CaregiverSignup: React.FC = () => {
     setPhoneNumber(formatted);
   };
 
-  const handleSignupSubmit: SubmitHandler<ICaregiverSignup> = () => {
-  
+  const handleSignupSubmit: SubmitHandler<ICaregiverSignup> = async (data) => {
     switchSpinnerOn();
-    
-    
-    setTimeout(() => {
+
+    try {
+      // Validate with Zod
+      const validated = caregiverSignupValidator.parse(data);
+
+      // Prepare payload for backend
+      const payload = {
+        firstName: validated.firstName,
+        lastName: validated.lastName,
+        email: validated.email,
+        password: validated.password,
+        dateOfBirth: validated.dateOfBirth.toString(), 
+        gender: validated.gender,
+        phoneNumber: validated.phoneNumber,
+        city: validated.city,
+        state: validated.state,
+        street: validated.street,
+        zipcode: validated.zipcode,
+        role: "Caregiver",
+      };
+
+      // Call live backend API
+      await registerCaregiver(payload);
+
+      toast.success("Account created successfully!");
+      navigate("/login", { replace: true });
+    } catch (error: any) {
+      if (error?.errors) {
+        // Zod validation error
+        toast.error(error.errors[0].message);
+      } else if (error.response?.data?.message) {
+        // Backend error message
+        toast.error(error.response.data.message);
+      } else {
+        toast.error(error.message || "An unexpected error occurred");
+      }
+    } finally {
       switchSpinnerOff();
-      toast.info("Feature coming soon!");
-      navigate("/comingsoon", { replace: true });
-    }, 500);
+    }
   };
 
   return (
@@ -59,266 +91,193 @@ export const CaregiverSignup: React.FC = () => {
             className="px-2 space-y-3 py-3"
             onSubmit={handleSubmit(handleSignupSubmit)}
           >
-           <div className=' space-y-3 md:space-y-0 md:grid grid-cols-2 md:space-x-3'>
-              <div className='flex flex-col  '>
-                <label htmlFor='firstName' className='text-gray-700'>
-                  First Name <sup className='text-rose-700'>*</sup>
+            {/* FIRST + LAST NAME */}
+            <div className="space-y-3 md:space-y-0 md:grid grid-cols-2 md:space-x-3">
+              <div className="flex flex-col">
+                <label className="text-gray-700">
+                  First Name <sup className="text-rose-700">*</sup>
                 </label>
                 <input
-                  type='text'
-                  className={` border-[1px] border-gray-400 rounded focus:outline-[1px] ${
+                  type="text"
+                  className={`border border-gray-400 rounded focus:outline-[1px] ${
                     errors.firstName
                       ? "focus:outline-red-500"
                       : "focus:outline-yellow-400"
-                  } `}
+                  }`}
                   {...register("firstName", { required: true })}
                 />
-                {errors.firstName && (
-                  <ErrorValidation error={"field cannot be empty"} />
-                )}
+                {errors.firstName && <ErrorValidation error="field cannot be empty" />}
               </div>
-              <div className='flex flex-col '>
-                <label htmlFor='lastName' className='text-gray-700'>
-                  Last Name <sup className='text-rose-700'>*</sup>
+
+              <div className="flex flex-col">
+                <label className="text-gray-700">
+                  Last Name <sup className="text-rose-700">*</sup>
                 </label>
                 <input
-                  type='text'
-                  className={` border-[1px] border-gray-400 rounded focus:outline-[1px] ${
+                  type="text"
+                  className={`border border-gray-400 rounded focus:outline-[1px] ${
                     errors.lastName
                       ? "focus:outline-red-500"
                       : "focus:outline-yellow-400"
                   }`}
                   {...register("lastName", { required: true })}
                 />
-                {errors.lastName && (
-                  <ErrorValidation error={"field cannot be empty"} />
-                )}
+                {errors.lastName && <ErrorValidation error="field cannot be empty" />}
               </div>
             </div>
-            <div className=' space-y-3 md:space-y-0 md:grid grid-cols-2 md:space-x-3'>
-              <div className='flex flex-col '>
-                <label htmlFor='email' className='text-gray-700'>
-                  Email<sup className='text-rose-700'>*</sup>
+
+            {/* EMAIL + PASSWORD */}
+            <div className="space-y-3 md:space-y-0 md:grid grid-cols-2 md:space-x-3">
+              <div className="flex flex-col">
+                <label className="text-gray-700">
+                  Email <sup className="text-rose-700">*</sup>
                 </label>
                 <input
-                  type='email'
-                  className={` border-[1px] border-gray-400 rounded focus:outline-[1px] ${
-                    errors.email
-                      ? "focus:outline-red-500"
-                      : "focus:outline-yellow-400"
+                  type="email"
+                  className={`border border-gray-400 rounded focus:outline-[1px] ${
+                    errors.email ? "focus:outline-red-500" : "focus:outline-yellow-400"
                   }`}
-                  {...register("email", {
-                    required: true,
-                    pattern:
-                      /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-                  })}
+                  {...register("email", { required: true })}
                 />
-                {errors.email && (
-                  <ErrorValidation error={"please check your email"} />
-                )}
+                {errors.email && <ErrorValidation error="please check your email" />}
               </div>
-              <div className='flex flex-col '>
-                <label htmlFor='password' className='text-gray-700'>
-                  Password<sup className='text-rose-700'>*</sup>
+
+              <div className="flex flex-col">
+                <label className="text-gray-700">
+                  Password <sup className="text-rose-700">*</sup>
                 </label>
                 <input
-                  type='password'
-                  className={` border-[1px] border-gray-400 rounded focus:outline-[1px] ${
-                    errors.password
-                      ? "focus:outline-red-500"
-                      : "focus:outline-yellow-400"
+                  type="password"
+                  className={`border border-gray-400 rounded focus:outline-[1px] ${
+                    errors.password ? "focus:outline-red-500" : "focus:outline-yellow-400"
                   }`}
-                  {...register("password", {
-                    required: true,
-                    pattern: /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,15}$/,
-                  })}
+                  {...register("password", { required: true })}
                 />
-                {errors.password?.type === "required" && (
-                  <ErrorValidation error={"field cannot be empty"} />
-                )}
-                {errors.password?.type === "pattern" && (
-                  <ErrorValidation
-                    error={
-                      "password should contain atleast one capital, one small letter, one number and characters between 6 to 15"
-                    }
-                  />
-                )}
+                {errors.password && <ErrorValidation error="Invalid password format" />}
               </div>
             </div>
-            <div className='  md:space-y-0 md:grid grid-cols-2 md:space-x-3'>
-              <div className='flex flex-col  '>
-                <label htmlFor='confirmPassword' className='text-gray-700'>
-                  Confirm Password<sup className='text-rose-700'>*</sup>
+
+            {/* CONFIRM PASSWORD */}
+            <div className="md:grid grid-cols-2 md:space-x-3">
+              <div className="flex flex-col">
+                <label className="text-gray-700">
+                  Confirm Password <sup className="text-rose-700">*</sup>
                 </label>
                 <input
-                  type='password'
-                  className={` border-[1px] border-gray-400 rounded focus:outline-[1px] ${
-                    errors.confirmPassword
-                      ? "focus:outline-red-500"
-                      : "focus:outline-yellow-400"
-                  } `}
-                  {...register("confirmPassword", {
-                    required: true,
-                    validate: (val: string) => {
-                      return watch("password") === val;
-                    },
-                  })}
+                  type="password"
+                  className={`border border-gray-400 rounded focus:outline-[1px] ${
+                    errors.confirmPassword ? "focus:outline-red-500" : "focus:outline-yellow-400"
+                  }`}
+                  {...register("confirmPassword", { required: true })}
                 />
-                {errors.confirmPassword?.type === "required" && (
-                  <ErrorValidation error={"field cannot be empty"} />
-                )}
-                {errors.confirmPassword?.type === "validate" && (
-                  <ErrorValidation error={"your password does not match"} />
-                )}
+                {errors.confirmPassword && <ErrorValidation error="your password does not match" />}
               </div>
             </div>
+
             <hr />
-            <div className=' space-y-3 md:space-y-0 md:grid grid-cols-2 md:space-x-3'>
-              <div className='flex flex-col '>
-                <label htmlFor='dob' className='text-gray-700'>
-                  Date of birth<sup className='text-rose-700'>*</sup>
+
+            {/* DOB + GENDER */}
+            <div className="space-y-3 md:space-y-0 md:grid grid-cols-2 md:space-x-3">
+              <div className="flex flex-col">
+                <label className="text-gray-700">
+                  Date of birth <sup className="text-rose-700">*</sup>
                 </label>
                 <input
-                  type='date'
-                  className={` border-[1px] border-gray-400 rounded focus:outline-[1px] ${
-                    errors.dob
-                      ? "focus:outline-red-500"
-                      : "focus:outline-yellow-400"
-                  } `}
-                  {...register("dob", { required: true })}
+                  type="date"
+                  className={`border border-gray-400 rounded focus:outline-[1px] ${
+                    errors.dateOfBirth ? "focus:outline-red-500" : "focus:outline-yellow-400"
+                  }`}
+                  {...register("dateOfBirth", { required: true })}
                 />
-                {errors.dob && (
-                  <ErrorValidation error={"field cannot be empty"} />
-                )}
+                {errors.dateOfBirth && <ErrorValidation error="field cannot be empty" />}
               </div>
-              <div className='flex flex-col'>
-                <label htmlFor='gender' className='text-gray-700'>
-                  Gender<sup className='text-rose-700'>*</sup>
+
+              <div className="flex flex-col">
+                <label className="text-gray-700">
+                  Gender <sup className="text-rose-700">*</sup>
                 </label>
                 <select
-                  className={` border-[1px] border-gray-400 rounded focus:outline-[1px] bg-white ${
-                    errors.dob
-                      ? "focus:outline-red-500"
-                      : "focus:outline-yellow-400"
-                  } `}
+                  className={`border border-gray-400 rounded focus:outline-[1px] bg-white ${
+                    errors.gender ? "focus:outline-red-500" : "focus:outline-yellow-400"
+                  }`}
                   {...register("gender", { required: true })}
-                  defaultValue=''
                 >
-                  <option value='' disabled>
+                  <option value="" disabled>
                     Select your gender
                   </option>
-                  <option value='Male'>Male</option>
-                  <option value='Female'>Female</option>
-                  <option value='Other'>Other</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
                 </select>
-                {errors.gender && (
-                  <ErrorValidation error={"please select your gender"} />
-                )}
+                {errors.gender && <ErrorValidation error="please select your gender" />}
               </div>
             </div>
-            <div className=' space-y-3 md:space-y-0 md:grid grid-cols-2 md:space-x-3'>
-              <div className='flex flex-col '>
-                <label htmlFor='state' className='text-gray-700'>
-                  State<sup className='text-rose-700'>*</sup>
-                </label>
+
+            {/* ADDRESS FIELDS */}
+            <div className="space-y-3 md:grid grid-cols-2 md:space-x-3">
+              <div className="flex flex-col">
+                <label className="text-gray-700">State*</label>
                 <input
-                  type='text'
-                  className={` border-[1px] border-gray-400 rounded focus:outline-[1px] ${
-                    errors.state
-                      ? "focus:outline-red-500"
-                      : "focus:outline-yellow-400"
-                  }`}
+                  type="text"
+                  className="border border-gray-400 rounded focus:outline-[1px]"
                   {...register("state", { required: true })}
                 />
-                {errors.state && (
-                  <ErrorValidation error={"field cannot be empty"} />
-                )}
+                {errors.state && <ErrorValidation error="field cannot be empty" />}
               </div>
-              <div className='flex flex-col '>
-                <label htmlFor='city' className='text-gray-700'>
-                  City<sup className='text-rose-700'>*</sup>
-                </label>
+
+              <div className="flex flex-col">
+                <label className="text-gray-700">City*</label>
                 <input
-                  type='text'
-                  className={` border-[1px] border-gray-400 rounded focus:outline-[1px] ${
-                    errors.city
-                      ? "focus:outline-red-500"
-                      : "focus:outline-yellow-400"
-                  }`}
+                  type="text"
+                  className="border border-gray-400 rounded focus:outline-[1px]"
                   {...register("city", { required: true })}
                 />
-                {errors.city && (
-                  <ErrorValidation error={"field cannot be empty"} />
-                )}
+                {errors.city && <ErrorValidation error="field cannot be empty" />}
               </div>
             </div>
-            <div className=' space-y-3 md:space-y-0 md:grid grid-cols-2 md:space-x-3'>
-              <div className='flex flex-col '>
-                <label htmlFor='zipcode' className='text-gray-700'>
-                  Zipcode<sup className='text-rose-700'>*</sup>
-                </label>
+
+            <div className="space-y-3 md:grid grid-cols-2 md:space-x-3">
+              <div className="flex flex-col">
+                <label className="text-gray-700">Zipcode*</label>
                 <input
-                  type='text'
-                  className={` border-[1px] border-gray-400 rounded focus:outline-[1px] ${
-                    errors.zipcode
-                      ? "focus:outline-red-500"
-                      : "focus:outline-yellow-400"
-                  }`}
+                  type="text"
+                  className="border border-gray-400 rounded"
                   {...register("zipcode", { required: true })}
                 />
-                {errors.zipcode && (
-                  <ErrorValidation error={"field cannot be empty"} />
-                )}
+                {errors.zipcode && <ErrorValidation error="field cannot be empty" />}
               </div>
-              <div className='flex flex-col '>
-                <label htmlFor='street' className='text-gray-700'>
-                  street<sup className='text-rose-700'>*</sup>
-                </label>
+
+              <div className="flex flex-col">
+                <label className="text-gray-700">Street*</label>
                 <input
-                  type='text'
-                  className={` border-[1px] border-gray-400 rounded focus:outline-[1px] ${
-                    errors.street
-                      ? "focus:outline-red-500"
-                      : "focus:outline-yellow-400"
-                  }`}
+                  type="text"
+                  className="border border-gray-400 rounded"
                   {...register("street", { required: true })}
                 />
-                {errors.street && (
-                  <ErrorValidation error={"field cannot be empty"} />
-                )}
+                {errors.street && <ErrorValidation error="field cannot be empty" />}
               </div>
             </div>
-            
-         
+
+            {/* PHONE NUMBER */}
             <div className="flex flex-col">
-              <label htmlFor="phoneNumber" className="text-gray-700">
+              <label className="text-gray-700">
                 Phone number <sup className="text-rose-700">*</sup>
               </label>
               <input
                 type="tel"
-                {...register("phoneNumber", {
-                  required: true,
-                  minLength: 10,
-                })}
+                {...register("phoneNumber", { required: true, minLength: 10 })}
                 onChange={handlePhoneNumberChange}
                 value={phoneNumber}
                 className={`border border-gray-400 rounded focus:outline-[1px] ${
-                  errors.phoneNumber
-                    ? "focus:outline-red-500"
-                    : "focus:outline-yellow-400"
+                  errors.phoneNumber ? "focus:outline-red-500" : "focus:outline-yellow-400"
                 }`}
               />
-              {errors.phoneNumber && (
-                <ErrorValidation error={"Enter a valid phone number"} />
-              )}
+              {errors.phoneNumber && <ErrorValidation error="Enter a valid phone number" />}
             </div>
 
-        
+            {/* TERMS */}
             <div>
-              <input
-                type="checkbox"
-                {...register("terms", { required: true })}
-              />
+              <input type="checkbox" {...register("terms", { required: true })} />
               <label>
                 {" "}
                 I agree to all the{" "}
@@ -326,16 +285,10 @@ export const CaregiverSignup: React.FC = () => {
                   Terms and Conditions
                 </Link>
               </label>
-              {errors.terms && (
-                <ErrorValidation
-                  error={
-                    "You must accept the terms and conditions to proceed"
-                  }
-                />
-              )}
+              {errors.terms && <ErrorValidation error="You must accept the terms and conditions to proceed" />}
             </div>
 
-           
+            {/* LOGIN LINK */}
             <div>
               Already have an account?{" "}
               <Link to="/login" className="text-blue-500 underline">
@@ -343,6 +296,7 @@ export const CaregiverSignup: React.FC = () => {
               </Link>
             </div>
 
+            {/* SUBMIT BUTTON */}
             <div className="flex justify-end">
               <Submitbutton value="Create Your Account" type="submit" />
             </div>
