@@ -1,48 +1,55 @@
-import { createContext, useContext, useEffect, useState } from "react";
-
-interface User {
-  id: string;
-  email: string;
-  role: "caregiver" | "provider" | "admin";
-}
+import { createContext, useContext, useState, ReactNode } from "react";
 
 interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  login: (user: User, token: string) => void;
+  user: any;
+  setUser: (val: any) => void;
+  accessToken: string | null;
+  refreshToken: string | null;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem("auth_user");
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-  const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem("auth_token");
-  });
-
-  const login = (userData: User, token: string) => {
-    setUser(userData);
-    setToken(token);
-    localStorage.setItem("auth_user", JSON.stringify(userData));
-    localStorage.setItem("auth_token", token);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  // SAFE GETTER: Avoid JSON.parse errors
+  const safeGet = (key: string) => {
+    try {
+      const value = localStorage.getItem(key);
+      if (!value || value === "undefined" || value === "null") return null;
+      return JSON.parse(value);
+    } catch {
+      return null; // fallback if JSON fails
+    }
   };
 
+  const [user, setUser] = useState<any>(safeGet("user"));
+  const [accessToken] = useState<string | null>(localStorage.getItem("accessToken"));
+  const [refreshToken] = useState<string | null>(localStorage.getItem("refreshToken"));
+
   const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("auth_user");
-    localStorage.removeItem("auth_token");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    window.location.href = "/login";
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        accessToken,
+        refreshToken,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext)!;
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  return ctx;
+};

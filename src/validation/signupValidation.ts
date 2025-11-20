@@ -80,8 +80,10 @@ export const providerRepValidator = z.object({
   //login form validation
 
 export const loginValidator = z.object({
-    username: z.string().email("Invalid email"),
+    username: z.string().min(1,"Invalid email"),
     password: z.string().min(6, "Password must be at least 6 characters"),
   });
   
   export type ILogin = z.infer<typeof loginValidator>;
+
+  

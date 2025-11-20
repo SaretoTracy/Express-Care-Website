@@ -1,18 +1,31 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 
-export default function PrivateRoute({
-  allowedRoles,
-}: {
-  allowedRoles: Array<"caregiver" | "provider" | "admin">;
-}) {
-  const { user } = useAuth();
+interface PrivateRouteProps {
+  allowedRoles: string[];
+}
 
-  if (!user) return <Navigate to="/login" replace />;
+const PrivateRoute = ({ allowedRoles }: PrivateRouteProps) => {
+  // Get user from localStorage
+  const userString = localStorage.getItem("user");
+  if (!userString) {
+    // Not logged in
+    return <Navigate to="/login" replace />;
+  }
 
-  if (!allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />;
+  const user = JSON.parse(userString);
+
+  // Detect role
+  let role = "";
+  if (user?.caregiver) role = "CAREGIVER";
+  else if (user?.adultHomeRepresentative) role = "HOMEREPRESENTATIVE";
+  else if (user?.roles && user.roles.length > 0) role = user.roles[0]?.name.toUpperCase() || "";
+
+  // Check if user's role is allowed
+  if (!allowedRoles.includes(role)) {
+    return <Navigate to="/" replace />; // redirect if not authorized
   }
 
   return <Outlet />;
-}
+};
+
+export default PrivateRoute;
