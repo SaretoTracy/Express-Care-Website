@@ -1,6 +1,7 @@
 import React from "react";
-import { YellowLink } from "../components/ButtonComponents/YellowLink";
-import caregivers from "../assets/images/caregiver1.jpg";
+
+import caregivers from "../../assets/images/caregiver1.jpg";
+import { YellowLink } from "../../components/ButtonComponents/YellowLink";
 
 export const CaregiverPage: React.FC = () => {
   const bgColor = "#557a95";

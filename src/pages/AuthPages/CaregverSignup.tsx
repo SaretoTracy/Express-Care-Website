@@ -43,6 +43,7 @@ export const CaregiverSignup: React.FC = () => {
         lastName: validated.lastName,
         email: validated.email,
         password: validated.password,
+        confirmPassword:validated.confirmPassword,
         dateOfBirth: validated.dateOfBirth.toString(), 
         gender: validated.gender,
         phoneNumber: validated.phoneNumber,

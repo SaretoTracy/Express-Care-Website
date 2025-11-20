@@ -2,6 +2,7 @@
 import axios from "axios";
 import type { ICaregiverSignup } from "../Interfaces/ICaregiverSignUp";
 import type { IProviderSignup } from "../Interfaces/IProviderSignUp";
+import type { ILogin } from "../validation/signupValidation";
 
 // Base URL of backend
 const API_BASE_URL = "https://expresscareteam-backend-api.onrender.com/api/auth";
@@ -54,3 +55,12 @@ export const registerProvider = async (data: IProviderSignup) => {
         }
       }
     };
+
+
+export const loginUser = async (data: ILogin) => {
+    const res = await axios.post(`${API_BASE_URL}/login`, data, {
+      headers: { "Content-Type": "application/json" },
+    });
+  
+    return res.data;
+  };

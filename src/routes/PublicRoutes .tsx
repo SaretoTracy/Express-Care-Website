@@ -8,7 +8,7 @@ import { ProviderSignup } from "../pages/AuthPages/ProviderSignup";
 import { CaregiverSignup } from "../pages/AuthPages/CaregverSignup";
 import { CaregiverPage } from "../pages/Mainwebpages/CaregiverPage";
 import { LandingPage } from "../pages/Mainwebpages/LandingPage";
-import ProviderLanding from "../pages/ProviderPages/ProviderLanding";
+import { ProviderPage } from "../pages/Mainwebpages/ProviderPage";
 
 
 const PublicRoutes = () => {
@@ -19,7 +19,7 @@ const PublicRoutes = () => {
         <Route index element={<LandingPage />} />
         <Route path="home" element={<LandingPage />} />
         <Route path="caregiver" element={<CaregiverPage />} />
-        <Route path="provider" element={<ProviderLanding />} />
+        <Route path="provider" element={<ProviderPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="signup" element={<SignupPage />} />
         <Route path="comingsoon" element={<ComingSoon />} />
