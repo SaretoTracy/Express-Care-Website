@@ -12,6 +12,7 @@ import { ProviderPage } from "../pages/Mainwebpages/ProviderPage";
 import ForgotPassword from "../pages/AuthPages/ForgotPassword";
 import ResetPassword from "../pages/AuthPages/ResetPassword";
 import VerifyOtp from "../pages/AuthPages/VerifyOtp";
+import Stripe from "../pages/ProviderDashboard/Stripe";
 
 
 const PublicRoutes = () => {
@@ -29,6 +30,7 @@ const PublicRoutes = () => {
         <Route path="provider/signup" element={<ProviderSignup />} />
         <Route path="caregiver/signup" element={<CaregiverSignup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/payment" element={< Stripe />} />
 <Route path="/verify-otp" element={<VerifyOtp />} />
 <Route path="/reset-password" element={<ResetPassword />} />
       </Route>
