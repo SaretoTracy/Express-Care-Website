@@ -9,6 +9,9 @@ import { CaregiverSignup } from "../pages/AuthPages/CaregverSignup";
 import { CaregiverPage } from "../pages/Mainwebpages/CaregiverPage";
 import { LandingPage } from "../pages/Mainwebpages/LandingPage";
 import { ProviderPage } from "../pages/Mainwebpages/ProviderPage";
+import ForgotPassword from "../pages/AuthPages/ForgotPassword";
+import ResetPassword from "../pages/AuthPages/ResetPassword";
+import VerifyOtp from "../pages/AuthPages/VerifyOtp";
 
 
 const PublicRoutes = () => {
@@ -25,6 +28,9 @@ const PublicRoutes = () => {
         <Route path="comingsoon" element={<ComingSoon />} />
         <Route path="provider/signup" element={<ProviderSignup />} />
         <Route path="caregiver/signup" element={<CaregiverSignup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/verify-otp" element={<VerifyOtp />} />
+<Route path="/reset-password" element={<ResetPassword />} />
       </Route>
     </>
   );

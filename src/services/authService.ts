@@ -103,17 +103,15 @@ export const verifyResetOtp = async (email: string, otp: string) => {
 // ---------------------------------------------------------
 export const resetPassword = async (
   email: string,
+  otp: string,
   password: string,
   confirmPassword: string
 ) => {
-  try {
-    const res = await axios.post(
-      `${API_BASE_URL}/resetPassword`,
-      { email, password, confirmPassword },
-      { headers: { "Content-Type": "application/json" } }
-    );
-    return res.data;
-  } catch (error: any) {
-    handleError(error);
-  }
+  const response = await axios.post(`${API_BASE_URL}/resetPassword`, {
+    email,
+    otp,
+    password,
+    confirmPassword,
+  });
+  return response.data;
 };

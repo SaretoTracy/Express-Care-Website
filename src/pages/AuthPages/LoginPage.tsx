@@ -117,6 +117,9 @@ export const LoginPage = () => {
             >
               {loading ? "Signing in..." : <><LogIn size={18} className={`mr-2 ${isHovered ? "translate-x-1" : ""}`} /> Sign in</>}
             </button>
+            <p onClick={() => navigate("/forgot-password")} className="text-center text-sm mt-6 text-gray-600  hover:text-[#335a73]">
+              Forgotten Password? 
+            </p>
 
             <p className="text-center text-sm mt-6 text-gray-600">
               Don’t have an account? <button type="button" onClick={() => navigate("/signup")} className="font-medium underline text-[#557a95] hover:text-[#335a73]">Sign up here</button>
