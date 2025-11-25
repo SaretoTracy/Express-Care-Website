@@ -1,21 +1,29 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { verifyResetOtp } from "../../services/authService";
-
+import { AuthCard, AuthInput, AuthButton } from "../../UI/AuthCard";
+import { KeyRound } from "lucide-react";
+import logo from "../../assets/images/logo.png";
 
 export default function VerifyOtp() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const email = location.state?.email; // ensure email passed from previous step
+  const email = location.state?.email;
   const { register, handleSubmit } = useForm();
   const [loading, setLoading] = useState(false);
 
+  // Check email in useEffect to avoid setState during render
+  useEffect(() => {
+    if (!email) {
+      navigate("/forgot-password");
+    }
+  }, [email, navigate]);
+
+  // Don't render if no email
   if (!email) {
-    navigate("/forgot-password");
     return null;
   }
 
@@ -35,28 +43,36 @@ export default function VerifyOtp() {
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center p-4 bg-gray-50">
-      <motion.div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
+    <AuthCard title="Verify OTP" logo={logo}>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <p className="text-center text-sm text-gray-600 mb-6">
+          Enter the 6-digit code sent to <strong>{email}</strong>
+        </p>
+
+        <AuthInput
+          label="Enter OTP"
+          type="text"
+          name="otp"
+          placeholder="123456"
+          icon={<KeyRound size={18} />}
+          register={register}
+        />
+
+        <AuthButton loading={loading} loadingText="Verifying...">
           Verify OTP
-        </h2>
+        </AuthButton>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="mb-6">
-            <label className="block mb-2 text-[#557a95]">Enter OTP</label>
-            <input
-              type="text"
-              {...register("otp")}
-              className="w-full px-4 py-3 border rounded-lg"
-              placeholder="123456"
-            />
-          </div>
-
-          <button className="w-full bg-yellow-500 text-white py-3 rounded-lg" disabled={loading}>
-            {loading ? "Verifying..." : "Verify OTP"}
+        <p className="text-center text-sm mt-6 text-gray-600">
+          Didn't receive code?{" "}
+          <button
+            type="button"
+            onClick={() => navigate("/forgot-password")}
+            className="font-medium underline text-[#557a95] hover:text-[#335a73]"
+          >
+            Resend
           </button>
-        </form>
-      </motion.div>
-    </div>
+        </p>
+      </form>
+    </AuthCard>
   );
 }

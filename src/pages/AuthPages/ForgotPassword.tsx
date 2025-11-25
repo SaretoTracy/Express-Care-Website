@@ -1,35 +1,26 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { motion } from "framer-motion";
 import { Mail } from "lucide-react";
 import { toast } from "react-toastify";
-
 import { useNavigate } from "react-router-dom";
 import { requestResetOtp } from "../../services/authService";
+import { AuthCard, AuthInput, AuthButton } from "../../UI/AuthCard";
+import logo from "../../assets/images/logo.png";
 
 export default function ForgotPassword() {
   const { register, handleSubmit } = useForm();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 30 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: { delay: i * 0.2, duration: 0.6 },
-    }),
-  };
-
   const onSubmit = async (data: any) => {
     try {
       setLoading(true);
-
       await requestResetOtp(data.email);
       toast.success("OTP sent to your email!");
-
+      
+      // Redirect to verify OTP page with email
       navigate("/verify-otp", {
-        state: { email: data.email }, // pass email to next page
+        state: { email: data.email },
       });
     } catch (err: any) {
       toast.error(err.response?.data || "Failed to send OTP");
@@ -39,41 +30,36 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <motion.div
-        className="w-full max-w-md bg-white shadow-xl p-8 rounded-2xl"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        <motion.h2 variants={fadeInUp} custom={0} className="text-2xl font-bold text-center text-gray-800 mb-6">
-          Forgot Password
-        </motion.h2>
+    <AuthCard title="Forgot Password" logo={logo}>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <p className="text-center text-sm text-gray-600 mb-6">
+          Enter your email address and we'll send you a code to reset your password
+        </p>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <motion.div variants={fadeInUp} custom={1} className="mb-6">
-            <label className="block mb-2 text-[#557a95]">Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="email"
-                {...register("email")}
-                className="w-full px-10 py-3 border rounded-lg"
-                placeholder="your@email..."
-              />
-            </div>
-          </motion.div>
+        <AuthInput
+          label="Email"
+          type="email"
+          name="email"
+          placeholder="your@email.com"
+          icon={<Mail size={18} />}
+          register={register}
+        />
 
-          <motion.button
-            className="w-full py-3 bg-yellow-500 text-white rounded-lg"
-            type="submit"
-            disabled={loading}
-            variants={fadeInUp}
-            custom={2}
+        <AuthButton loading={loading} loadingText="Sending...">
+          Send OTP
+        </AuthButton>
+
+        <p className="text-center text-sm mt-6 text-gray-600">
+          Remember your password?{" "}
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
+            className="font-medium underline text-[#557a95] hover:text-[#335a73]"
           >
-            {loading ? "Sending..." : "Send OTP"}
-          </motion.button>
-        </form>
-      </motion.div>
-    </div>
+            Sign in here
+          </button>
+        </p>
+      </form>
+    </AuthCard>
   );
 }

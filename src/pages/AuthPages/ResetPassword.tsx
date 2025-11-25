@@ -1,8 +1,11 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { resetPassword } from "../../services/authService";
-
+import { AuthCard, AuthInput, AuthButton } from "../../UI/AuthCard";
+import { Lock, Eye, EyeOff } from "lucide-react";
+import logo from "../../assets/images/logo.png";
 
 export default function ResetPassword() {
   const location = useLocation();
@@ -12,55 +15,73 @@ export default function ResetPassword() {
   const otp = location.state?.otp;
 
   const { register, handleSubmit } = useForm();
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Check credentials in useEffect to avoid setState during render
+  useEffect(() => {
+    if (!email || !otp) {
+      navigate("/forgot-password");
+    }
+  }, [email, otp, navigate]);
+
+  // Don't render if no credentials
   if (!email || !otp) {
-    navigate("/forgot-password");
     return null;
   }
 
   const onSubmit = async (data: any) => {
+    if (data.password !== data.confirmPassword) {
+      toast.error("Passwords do not match!");
+      return;
+    }
+
     try {
+      setLoading(true);
       await resetPassword(email, otp, data.password, data.confirmPassword);
-      toast.success("Password updated!");
+      toast.success("Password updated successfully!");
       navigate("/login");
     } catch (err: any) {
       toast.error("Reset failed");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center p-4 bg-gray-50">
-      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
-          Create New Password
-        </h2>
+    <AuthCard title="Create New Password" logo={logo}>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <p className="text-center text-sm text-gray-600 mb-6">
+          Enter your new password below
+        </p>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="mb-4">
-            <label className="block mb-2 text-[#557a95]">New Password</label>
-            <input
-              type="password"
-              {...register("password")}
-              className="w-full px-4 py-3 border rounded-lg"
-            />
-          </div>
+        <AuthInput
+          label="New Password"
+          type={showPassword ? "text" : "password"}
+          name="password"
+          placeholder="••••••••"
+          icon={<Lock size={18} />}
+          register={register}
+          rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          onRightIconClick={() => setShowPassword(!showPassword)}
+        />
 
-          <div className="mb-6">
-            <label className="block mb-2 text-[#557a95]">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              {...register("confirmPassword")}
-              className="w-full px-4 py-3 border rounded-lg"
-            />
-          </div>
+        <AuthInput
+          label="Confirm Password"
+          type={showConfirmPassword ? "text" : "password"}
+          name="confirmPassword"
+          placeholder="••••••••"
+          icon={<Lock size={18} />}
+          register={register}
+          rightIcon={showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          onRightIconClick={() => setShowConfirmPassword(!showConfirmPassword)}
+        />
 
-          <button className="w-full bg-yellow-500 py-3 text-white rounded-lg">
-            Reset Password
-          </button>
-        </form>
-      </div>
-    </div>
+        <AuthButton loading={loading} loadingText="Resetting...">
+          Reset Password
+        </AuthButton>
+      </form>
+    </AuthCard>
   );
 }
