@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { Home, Bell, User, LogOut, Menu, X } from "lucide-react";
 import logo from "../../assets/images/logo.png";
 
 export const CaregiverNavbar: React.FC = () => {
@@ -13,14 +14,12 @@ export const CaregiverNavbar: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const yellow = "#FF9923";
-
   return (
     <>
       {/* Navbar */}
       <nav
         className={`fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 md:px-8 py-3 transition-all duration-300 ${
-          scrolled ? "shadow-md bg-[#557a95]" : "bg-[#557a95]"
+          scrolled ? "shadow-lg bg-[#557a95]" : "bg-[#557a95]"
         }`}
       >
         {/* Left: Logo */}
@@ -36,8 +35,9 @@ export const CaregiverNavbar: React.FC = () => {
         <div className="hidden lg:flex flex-1 justify-center items-center space-x-12 font-semibold text-yellow-400">
           <Link
             to="/caregiver/dashboard"
-            className="relative group text-lg tracking-wide"
+            className="relative group text-lg tracking-wide flex items-center gap-2"
           >
+            <Home className="w-5 h-5" />
             <span className="group-hover:text-white transition-colors duration-300">
               Home
             </span>
@@ -46,8 +46,9 @@ export const CaregiverNavbar: React.FC = () => {
 
           <Link
             to="/caregiver/notification"
-            className="relative group text-lg tracking-wide"
+            className="relative group text-lg tracking-wide flex items-center gap-2"
           >
+            <Bell className="w-5 h-5" />
             <span className="group-hover:text-white transition-colors duration-300">
               Notifications
             </span>
@@ -56,8 +57,9 @@ export const CaregiverNavbar: React.FC = () => {
 
           <Link
             to="/caregiver/profile"
-            className="relative group text-lg tracking-wide"
+            className="relative group text-lg tracking-wide flex items-center gap-2"
           >
+            <User className="w-5 h-5" />
             <span className="group-hover:text-white transition-colors duration-300">
               Profile
             </span>
@@ -69,32 +71,19 @@ export const CaregiverNavbar: React.FC = () => {
         <div className="hidden lg:flex items-center space-x-3">
           <Link
             to="/logout"
-            className="bg-white text-[#FF9923] px-4 py-2 rounded-md shadow hover:bg-blue-50 transition"
+            className="bg-white text-[#FF9923] px-4 py-2 rounded-md shadow-md hover:shadow-lg hover:bg-blue-50 transition-all duration-300 flex items-center gap-2 font-semibold"
           >
+            <LogOut className="w-4 h-4" />
             Logout
           </Link>
-         
         </div>
 
         {/* Mobile Hamburger */}
         <button
           onClick={() => setMenuOpen(true)}
-          className="lg:hidden text-yellow-400 focus:outline-none"
+          className="lg:hidden text-yellow-400 focus:outline-none hover:text-white transition-colors"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke={yellow}
-            className="w-8 h-8"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
+          <Menu className="w-8 h-8" />
         </button>
       </nav>
 
@@ -106,37 +95,39 @@ export const CaregiverNavbar: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -40 }}
             transition={{ duration: 0.35, ease: "easeOut" }}
-            className="fixed inset-0 z-40 bg-[#557a95]/95 flex flex-col items-center justify-center text-yellow-400 space-y-8 text-xl font-semibold"
+            className="fixed inset-0 z-40 bg-[#557a95]/95 backdrop-blur-sm flex flex-col items-center justify-center text-yellow-400 space-y-8 text-xl font-semibold"
           >
             {/* Close Button */}
             <button
               onClick={() => setMenuOpen(false)}
               className="absolute top-6 right-6 text-white hover:text-yellow-400 transition"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                stroke="currentColor"
-                className="w-8 h-8"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <X className="w-8 h-8" />
             </button>
 
             {/* Mobile Links */}
-            <Link to="/caregiver/dashboard" onClick={() => setMenuOpen(false)} className="hover:text-white transition">
+            <Link 
+              to="/caregiver/dashboard" 
+              onClick={() => setMenuOpen(false)} 
+              className="hover:text-white transition flex items-center gap-3"
+            >
+              <Home className="w-6 h-6" />
               Home
             </Link>
-            <Link to="/caregiver/notification" onClick={() => setMenuOpen(false)} className="hover:text-white transition">
-              Notification
+            <Link 
+              to="/caregiver/notification" 
+              onClick={() => setMenuOpen(false)} 
+              className="hover:text-white transition flex items-center gap-3"
+            >
+              <Bell className="w-6 h-6" />
+              Notifications
             </Link>
-            <Link to="/caregiver/profile" onClick={() => setMenuOpen(false)} className="hover:text-white transition">
+            <Link 
+              to="/caregiver/profile" 
+              onClick={() => setMenuOpen(false)} 
+              className="hover:text-white transition flex items-center gap-3"
+            >
+              <User className="w-6 h-6" />
               Profile
             </Link>
 
@@ -145,10 +136,11 @@ export const CaregiverNavbar: React.FC = () => {
               <Link
                 to="/logout"
                 onClick={() => setMenuOpen(false)}
-                className="bg-white text-[#FF9923] px-6 py-2 rounded-md shadow hover:bg-blue-50 transition"
+                className="bg-white text-[#FF9923] px-6 py-2 rounded-md shadow-md hover:shadow-lg hover:bg-blue-50 transition-all flex items-center gap-2 justify-center"
               >
-                Logout              </Link>
-           
+                <LogOut className="w-5 h-5" />
+                Logout
+              </Link>
             </div>
           </motion.div>
         )}
@@ -159,3 +151,4 @@ export const CaregiverNavbar: React.FC = () => {
     </>
   );
 };
+
