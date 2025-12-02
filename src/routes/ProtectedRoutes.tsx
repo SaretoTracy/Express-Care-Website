@@ -6,6 +6,7 @@ import AdminLanding from "../pages/AdminDashboard/AdminLanding";
 import AdminLayout from "../layouts/AdminLayout";
 import CaregiverLayout from "../layouts/CaregiverLayout";
 import ProviderLayout from "../layouts/ProviderLayout";
+import CaregiverRequirementForm from "../pages/CaregiverDashboard/CaregiverRequirementForm";
 
 export default function ProtectedRoutes() {
   return (
@@ -15,6 +16,7 @@ export default function ProtectedRoutes() {
       <Route element={<PrivateRoute allowedRoles={["CAREGIVER"]} />}>
         <Route element={<CaregiverLayout />}>
           <Route path="/caregiver/dashboard" element={<CaregiverLanding />} />
+          <Route path="/caregiver/requirements" element={<CaregiverRequirementForm />} />
         </Route>
       </Route>
 

@@ -2,9 +2,10 @@ import axios from "axios";
 import type { ICaregiverSignup } from "../Interfaces/ICaregiverSignUp";
 import type { IProviderSignup } from "../Interfaces/IProviderSignUp";
 import type { ILogin } from "../validation/signupValidation";
+import type { ICareRequirements } from "../Interfaces/ICareRequirements";
 
 // Base URL of backend
-const API_BASE_URL = "https://expresscareteam-backend-api.onrender.com/api/auth";
+const API_BASE_URL = "https://expresscareteam-backend-api.onrender.com/api";
 
 // CENTRALIZED ERROR HANDLER
 const handleError = (error: any) => {
@@ -23,7 +24,7 @@ const handleError = (error: any) => {
 export const registerCaregiver = async (data: Partial<ICaregiverSignup>) => {
   try {
     const response = await axios.post(
-      `${API_BASE_URL}/register/caregiver`,
+      `${API_BASE_URL}/auth/register/caregiver`,
       data,
       { headers: { "Content-Type": "application/json" } }
     );
@@ -39,7 +40,7 @@ export const registerCaregiver = async (data: Partial<ICaregiverSignup>) => {
 export const registerProvider = async (data: IProviderSignup) => {
   try {
     const response = await axios.post(
-      `${API_BASE_URL}/register/provider`,
+      `${API_BASE_URL}/auth/register/provider`,
       data,
       { headers: { "Content-Type": "application/json" } }
     );
@@ -54,7 +55,7 @@ export const registerProvider = async (data: IProviderSignup) => {
 // ---------------------------------------------------------
 export const loginUser = async (data: ILogin) => {
   try {
-    const res = await axios.post(`${API_BASE_URL}/login`, data, {
+    const res = await axios.post(`${API_BASE_URL}/auth/login`, data, {
       headers: { "Content-Type": "application/json" },
     });
     return res.data;
@@ -70,7 +71,7 @@ export const loginUser = async (data: ILogin) => {
 export const requestResetOtp = async (email: string) => {
   try {
     const res = await axios.post(
-      `${API_BASE_URL}/requestResetOtp`,
+      `${API_BASE_URL}/auth/requestResetOtp`,
       { email },
       { headers: { "Content-Type": "application/json" } }
     );
@@ -87,7 +88,7 @@ export const requestResetOtp = async (email: string) => {
 export const verifyResetOtp = async (email: string, otp: string) => {
   try {
     const res = await axios.post(
-      `${API_BASE_URL}/verifyResetOtp`,
+      `${API_BASE_URL}/auth/verifyResetOtp`,
       { email, otp },
       { headers: { "Content-Type": "application/json" } }
     );
@@ -107,11 +108,28 @@ export const resetPassword = async (
   password: string,
   confirmPassword: string
 ) => {
-  const response = await axios.post(`${API_BASE_URL}/resetPassword`, {
+  const response = await axios.post(`${API_BASE_URL}/auth/resetPassword`, {
     email,
     otp,
     password,
     confirmPassword,
   });
   return response.data;
+};
+
+// ---------------------------------------------------------
+// UPLOAD CAREGIVER REQUIREMENT DOCUMENTS
+// ---------------------------------------------------------
+
+export const uploadCaregiverRequirements = async (data: ICareRequirements) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/caregiver-requirements/upload`,
+      data,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response.data;
+  } catch (error: any) {
+    handleError(error);
+  }
 };
