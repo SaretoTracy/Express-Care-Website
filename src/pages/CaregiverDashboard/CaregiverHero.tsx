@@ -1,5 +1,5 @@
 import  { Shield, TrendingUp, Briefcase, Clock, Eye } from "lucide-react";
-import logo from "../../assets/images/logo.png";
+
 
 
 export const CaregiverHero = () => {
