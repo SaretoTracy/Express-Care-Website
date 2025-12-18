@@ -34,27 +34,45 @@ export const LoginPage = () => {
     try {
       setLoading(true);
       const response = await loginUser(data);
-
-      // Store user and tokens
+  
+      const role =
+        response.roles?.[0]?.name?.toUpperCase() || "CAREGIVER";
+  
+      let profile = null;
+  
+      if (role === "CAREGIVER" && response.caregiver) {
+        profile = response.caregiver;
+      }
+  
+      if (role === "HOMEREPRESENTATIVE" && response.adultHomeRepresentative) {
+        profile = response.adultHomeRepresentative;
+      }
+  
+      const normalizedUser = {
+        id: response.id,
+        username: response.username,
+        role,
+        profile,
+      };
+  
+      
+      localStorage.setItem("user", JSON.stringify(normalizedUser));
       localStorage.setItem("accessToken", response.accessToken);
       localStorage.setItem("refreshToken", response.refreshToken || "");
-      localStorage.setItem("user", JSON.stringify(response));
-
+  
       toast.success("Login successful!");
-
-      // Redirect based on role
-      if (response.caregiver) navigate("/caregiver/dashboard");
-      else if (response.adultHomeRepresentative) navigate("/provider/dashboard");
-      else if (response.roles?.some((r: any) => r.name.toUpperCase() === "ADMIN"))
-        navigate("/admin/dashboard");
-      else navigate("/"); // fallback
+  
+      if (role === "CAREGIVER") navigate("/caregiver/dashboard");
+      else if (role === "HOMEREPRESENTATIVE") navigate("/provider/dashboard");
+      else if (role === "ADMIN") navigate("/admin/dashboard");
+      else navigate("/");
     } catch (error: any) {
       toast.error(error.message || "Login failed");
     } finally {
       setLoading(false);
     }
   };
-
+  
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   return (
