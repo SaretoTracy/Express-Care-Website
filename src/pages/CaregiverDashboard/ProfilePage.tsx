@@ -1,82 +1,102 @@
-import React from "react";
-
-import { User, Mail, Phone, MapPin } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { CheckCircle, Circle } from "lucide-react";
 
+const REQUIRED_FIELDS = [
+  { key: "firstName", label: "First Name" },
+  { key: "lastName", label: "Last Name" },
+  { key: "email", label: "Email" },
+  { key: "phoneNumber", label: "Phone Number" },
+  { key: "city", label: "City" },
+  { key: "state", label: "State" },
+  { key: "gender", label: "Gender" },
+  { key: "dateOfBirth", label: "Date of Birth" },
+];
 
-// Example props interface — replace with your actual user type
-interface IUserProfile {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  city: string;
-  state: string;
-}
-
-interface ProfilePageProps {
-  user: IUserProfile;
-}
-
-export default function ProfilePage() {
+export default function CaregiverProfilePage() {
   const { user } = useAuth();
-const profile = user?.profile;
+  const profile = user?.profile as any;
+
+  if (!profile) {
+    return <p className="p-6">No caregiver profile found.</p>;
+  }
+
+  const completedCount = REQUIRED_FIELDS.filter(
+    (field) => Boolean(profile[field.key])
+  ).length;
+
+  const completionPercent = Math.round(
+    (completedCount / REQUIRED_FIELDS.length) * 100
+  );
+
   return (
-    <div className="w-full min-h-screen bg-gray-50 text-gray-800">
-      <div className="max-w-4xl mx-auto py-10 px-4">
-        {/* Header */}
-        <div className="flex flex-col items-center mb-10">
-          <div className="w-28 h-28 rounded-full bg-gray-300 overflow-hidden mb-4">
-            {profile ?.photo ? (
-              <img src={profile .photo} alt="Profile" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-4xl text-white bg-gray-500">
-                {profile ?.firstName?.[0] || "U"}
-              </div>
-            )}
-          </div>
-          <h1 className="text-2xl font-bold text-[#557a95]">
-            {profile  ? `${profile .firstName} ${profile .lastName}` : "profile  Name"}
-          </h1>
-          <p className="text-gray-600">Welcome to your Express Care profile</p>
+    <div className="max-w-4xl mx-auto p-6">
+      {/* Header */}
+      <h1 className="text-3xl font-bold text-[#557a95] mb-2">
+        Welcome, {profile.firstName}
+      </h1>
+      <p className="text-gray-600 mb-6">
+        Complete your caregiver profile to unlock more job opportunities.
+      </p>
+
+      {/* Progress Bar */}
+      <div className="bg-white rounded-xl shadow p-6 mb-8">
+        <div className="flex justify-between mb-2">
+          <span className="font-medium text-gray-700">
+            Profile Completion
+          </span>
+          <span className="font-semibold text-[#e68a1f]">
+            {completionPercent}%
+          </span>
         </div>
-
-        {/* Profile Info */}
-        <div className="bg-white shadow-md rounded-xl p-6 space-y-4 border-l-4 border-[#e68a1f]">
-          <h2 className="text-xl font-semibold text-[#557a95]">Profile Details</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">First Name</p>
-              <p className="font-medium">{profile ?.firstName || "-"}</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">Last Name</p>
-              <p className="font-medium">{profile ?.lastName || "-"}</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">Email</p>
-              <p className="font-medium">{profile ?.email || "-"}</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">Phone Number</p>
-              <p className="font-medium">{profile ?.phoneNumber || "-"}</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">City</p>
-              <p className="font-medium">{profile ?.city || "-"}</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">State</p>
-              <p className="font-medium">{profile ?.state || "-"}</p>
-            </div>
-          </div>
+        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div
+            className="h-3 bg-[#e68a1f] transition-all duration-500"
+            style={{ width: `${completionPercent}%` }}
+          />
         </div>
+      </div>
+
+      {/* Checklist */}
+      <div className="bg-white rounded-xl shadow p-6">
+        <h2 className="text-xl font-semibold text-[#557a95] mb-4">
+          Profile Checklist
+        </h2>
+
+        <ul className="space-y-3">
+          {REQUIRED_FIELDS.map((field) => {
+            const isComplete = Boolean(profile[field.key]);
+            return (
+              <li
+                key={field.key}
+                className="flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  {isComplete ? (
+                    <CheckCircle className="text-green-500" size={20} />
+                  ) : (
+                    <Circle className="text-gray-400" size={20} />
+                  )}
+                  <span
+                    className={
+                      isComplete ? "text-gray-800" : "text-gray-500"
+                    }
+                  >
+                    {field.label}
+                  </span>
+                </div>
+                <span
+                  className={
+                    isComplete
+                      ? "text-green-600 text-sm"
+                      : "text-red-500 text-sm"
+                  }
+                >
+                  {isComplete ? "Completed" : "Required"}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </div>
   );

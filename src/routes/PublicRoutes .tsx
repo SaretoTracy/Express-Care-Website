@@ -12,7 +12,11 @@ import { ProviderPage } from "../pages/Mainwebpages/ProviderPage";
 import ForgotPassword from "../pages/AuthPages/ForgotPassword";
 import ResetPassword from "../pages/AuthPages/ResetPassword";
 import VerifyOtp from "../pages/AuthPages/VerifyOtp";
-import Stripe from "../pages/ProviderDashboard/Stripe";
+
+import ProviderHero from "../pages/ProviderDashboard/ProviderHero";
+import PostJobForm from "../pages/ProviderDashboard/PostJobForm";
+import StripePaymentPage from "../pages/ProviderDashboard/StripePaymentPage";
+
 
 
 const PublicRoutes = () => {
@@ -30,7 +34,10 @@ const PublicRoutes = () => {
         <Route path="provider/signup" element={<ProviderSignup />} />
         <Route path="caregiver/signup" element={<CaregiverSignup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/payment" element={< Stripe />} />
+        <Route path="/payment" element={< StripePaymentPage />} />
+        <Route path="/providerhero" element={< ProviderHero />} />
+        <Route path="/postjob" element={< PostJobForm />} />
+        
 <Route path="/verify-otp" element={<VerifyOtp />} />
 <Route path="/reset-password" element={<ResetPassword />} />
       </Route>

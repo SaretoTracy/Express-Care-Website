@@ -5,7 +5,7 @@ import type { ILogin } from "../validation/signupValidation";
 import type { ICareRequirements } from "../Interfaces/ICareRequirements";
 
 // Base URL of backend
-const API_BASE_URL = "https://expresscareteam-backend-api.onrender.com/api";
+const API_BASE_URL = "https://api.expresscareteam.com/api-docs/api";
 
 // CENTRALIZED ERROR HANDLER
 const handleError = (error: any) => {
