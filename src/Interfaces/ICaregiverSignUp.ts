@@ -1,10 +1,10 @@
 export interface ICaregiverSignup{
-    email: string;
+   email: string;
    password: string;
    firstName: string;
    lastName: string;
    confirmPassword: string;
-   dob: Date;
+   dateOfBirth: string;
    gender: string;
    state: string;
    city: string;

@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Users, Briefcase, LogIn, UserPlus, Menu, X } from "lucide-react";
+import { Home, Bell, User, LogOut, Menu, X } from "lucide-react";
 import logo from "../../assets/images/logo.png";
 
-export const NavBar: React.FC = () => {
+export const CaregiverNavbar: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -35,7 +34,7 @@ export const NavBar: React.FC = () => {
         {/* Center: Navigation Links */}
         <div className="hidden lg:flex flex-1 justify-center items-center space-x-12 font-semibold text-yellow-400">
           <Link
-            to="/"
+            to="/caregiver/dashboard"
             className="relative group text-lg tracking-wide flex items-center gap-2"
           >
             <Home className="w-5 h-5" />
@@ -46,23 +45,23 @@ export const NavBar: React.FC = () => {
           </Link>
 
           <Link
-            to="/caregiver"
+            to="/caregiver/notification"
             className="relative group text-lg tracking-wide flex items-center gap-2"
           >
-            <Users className="w-5 h-5" />
+            <Bell className="w-5 h-5" />
             <span className="group-hover:text-white transition-colors duration-300">
-              Caregiver
+              Notifications
             </span>
             <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-yellow-400 transition-all duration-300 group-hover:w-full"></span>
           </Link>
 
           <Link
-            to="/provider"
+            to="/caregiver/profile"
             className="relative group text-lg tracking-wide flex items-center gap-2"
           >
-            <Briefcase className="w-5 h-5" />
+            <User className="w-5 h-5" />
             <span className="group-hover:text-white transition-colors duration-300">
-              Provider
+              Profile
             </span>
             <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-yellow-400 transition-all duration-300 group-hover:w-full"></span>
           </Link>
@@ -71,18 +70,11 @@ export const NavBar: React.FC = () => {
         {/* Right: Auth Buttons */}
         <div className="hidden lg:flex items-center space-x-3">
           <Link
-            to="/login"
+            to="/logout"
             className="bg-white text-[#FF9923] px-4 py-2 rounded-md shadow-md hover:shadow-lg hover:bg-blue-50 transition-all duration-300 flex items-center gap-2 font-semibold"
           >
-            <LogIn className="w-4 h-4" />
-            Login
-          </Link>
-          <Link
-            to="/signup"
-            className="bg-[#FF9923] text-white px-4 py-2 rounded-md shadow-md hover:shadow-lg hover:bg-[#e68a1f] transition-all duration-300 flex items-center gap-2 font-semibold"
-          >
-            <UserPlus className="w-4 h-4" />
-            Sign Up
+            <LogOut className="w-4 h-4" />
+            Logout
           </Link>
         </div>
 
@@ -115,7 +107,7 @@ export const NavBar: React.FC = () => {
 
             {/* Mobile Links */}
             <Link 
-              to="/" 
+              to="/caregiver/dashboard" 
               onClick={() => setMenuOpen(false)} 
               className="hover:text-white transition flex items-center gap-3"
             >
@@ -123,39 +115,31 @@ export const NavBar: React.FC = () => {
               Home
             </Link>
             <Link 
-              to="/caregiver" 
+              to="/caregiver/notification" 
               onClick={() => setMenuOpen(false)} 
               className="hover:text-white transition flex items-center gap-3"
             >
-              <Users className="w-6 h-6" />
-              Caregiver
+              <Bell className="w-6 h-6" />
+              Notifications
             </Link>
             <Link 
-              to="/provider" 
+              to="/caregiver/profile" 
               onClick={() => setMenuOpen(false)} 
               className="hover:text-white transition flex items-center gap-3"
             >
-              <Briefcase className="w-6 h-6" />
-              Provider
+              <User className="w-6 h-6" />
+              Profile
             </Link>
 
             {/* Auth Buttons */}
             <div className="flex flex-col space-y-4 mt-6">
               <Link
-                to="/login"
+                to="/logout"
                 onClick={() => setMenuOpen(false)}
                 className="bg-white text-[#FF9923] px-6 py-2 rounded-md shadow-md hover:shadow-lg hover:bg-blue-50 transition-all flex items-center gap-2 justify-center"
               >
-                <LogIn className="w-5 h-5" />
-                Login
-              </Link>
-              <Link
-                to="/signup"
-                onClick={() => setMenuOpen(false)}
-                className="bg-[#FF9923] text-white px-6 py-2 rounded-md shadow-md hover:shadow-lg hover:bg-[#e68a1f] transition-all flex items-center gap-2 justify-center"
-              >
-                <UserPlus className="w-5 h-5" />
-                Sign Up
+                <LogOut className="w-5 h-5" />
+                Logout
               </Link>
             </div>
           </motion.div>
@@ -167,3 +151,4 @@ export const NavBar: React.FC = () => {
     </>
   );
 };
+

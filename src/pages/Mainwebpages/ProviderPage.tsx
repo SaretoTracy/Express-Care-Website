@@ -1,9 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { YellowLink } from "../components/ButtonComponents/YellowLink";
-import care5 from "../assets/care5.jpg";
 
-export const ProviderLanding: React.FC = () => {
+import care5 from "../../assets/care5.jpg";
+import  { YellowLink } from "../../components/ButtonComponents/YellowLink";
+
+export const ProviderPage: React.FC = () => {
   const bgColor = "#557a95";
 
   // Animation variants
