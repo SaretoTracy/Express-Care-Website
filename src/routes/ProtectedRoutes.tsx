@@ -6,7 +6,7 @@ import AdminLanding from "../pages/AdminDashboard/AdminLanding";
 import AdminLayout from "../layouts/AdminLayout";
 import CaregiverLayout from "../layouts/CaregiverLayout";
 import ProviderLayout from "../layouts/ProviderLayout";
-import CaregiverRequirementForm from "../pages/CaregiverDashboard/CaregiverRequirementForm";
+import CaregiverRequirementForm from "../pages/CaregiverDashboard/CaregiverRequirementUploadPage";
 import ProfilePage from "../pages/CaregiverDashboard/ProfilePage";
 
 export default function ProtectedRoutes() {
