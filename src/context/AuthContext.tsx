@@ -1,50 +1,121 @@
-import { createContext, useContext, useState, ReactNode } from "react";
-import type { AuthUser } from "../Interfaces/auth";
-
+import type { ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+} from "react";
+import toast from "react-hot-toast";
+import { getCurrentUser, logoutUser } from "../services/authService";
+import { AuthEvents } from "../utils/authEventBus";
 
 interface AuthContextType {
-  user: AuthUser | null;
-  setUser: (user: AuthUser | null) => void;
-  accessToken: string | null;
-  refreshToken: string | null;
-  logout: () => void;
+  user: any;
+  loading: boolean;
+
+  setAuthData: (
+    user: any,
+    accessToken: string,
+    refreshToken: string
+  ) => void;
+
+  logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const safeGet = <T,>(key: string): T | null => {
-  try {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : null;
-  } catch {
-    return null;
-  }
-};
+const AuthContext = createContext<AuthContextType | undefined>(
+  undefined
+);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AuthUser | null>(
-    safeGet<AuthUser>("user")
+  const [user, setUser] = useState<any>(
+    JSON.parse(localStorage.getItem("user") || "null")
   );
 
-  const [accessToken] = useState<string | null>(
-    localStorage.getItem("accessToken")
-  );
-  const [refreshToken] = useState<string | null>(
-    localStorage.getItem("refreshToken")
-  );
+  const [loading, setLoading] = useState(true);
 
-  const logout = () => {
+  /*
+  -------------------------------------------------
+  Save Auth Data (Login Flow)
+  -------------------------------------------------
+  */
+
+  const setAuthData = (
+    userData: any,
+    accessToken: string,
+    refreshToken: string
+  ) => {
+    setUser(userData);
+
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+  };
+
+  /*
+  -------------------------------------------------
+  Logout Logic
+  -------------------------------------------------
+  */
+
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch (err) {
+      console.error("Logout API failed:", err);
+    }
+
     localStorage.clear();
+    setUser(null);
+
+    toast.success("Logged out");
+
     window.location.href = "/login";
   };
+
+  /*
+  -------------------------------------------------
+  Session Restore
+  -------------------------------------------------
+  */
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const user = await getCurrentUser();
+        setUser(user);
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    restoreSession();
+  }, []);
+
+  /*
+  -------------------------------------------------
+  Global Auth Expiry Listener
+  -------------------------------------------------
+  */
+
+  useEffect(() => {
+    const handleExpire = async () => {
+      await logout();
+    };
+
+    window.addEventListener(AuthEvents.EXPIRED, handleExpire);
+
+    return () =>
+      window.removeEventListener(AuthEvents.EXPIRED, handleExpire);
+  }, []);
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        setUser,
-        accessToken,
-        refreshToken,
+        loading,
+        setAuthData,
         logout,
       }}
     >
@@ -53,8 +124,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+/*
+-------------------------------------------------
+Custom Hook
+-------------------------------------------------
+*/
+
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+
+  if (!ctx) {
+    throw new Error(
+      "useAuth must be used inside AuthProvider"
+    );
+  }
+
   return ctx;
 };
