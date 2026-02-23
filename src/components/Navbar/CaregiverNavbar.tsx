@@ -3,16 +3,32 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Home, Bell, User, LogOut, Menu, X } from "lucide-react";
 import logo from "../../assets/images/logo.png";
+import { useAuth } from "../../context/AuthContext";
 
 export const CaregiverNavbar: React.FC = () => {
+  const { logout } = useAuth();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
+  // Scroll Effect
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
+
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Logout Handler
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed", error);
+    } finally {
+      setMenuOpen(false);
+    }
+  };
 
   return (
     <>
@@ -22,7 +38,7 @@ export const CaregiverNavbar: React.FC = () => {
           scrolled ? "shadow-lg bg-[#557a95]" : "bg-[#557a95]"
         }`}
       >
-        {/* Left: Logo */}
+        {/* Logo */}
         <Link to="/" className="flex items-center space-x-2">
           <img
             src={logo}
@@ -31,7 +47,7 @@ export const CaregiverNavbar: React.FC = () => {
           />
         </Link>
 
-        {/* Center: Navigation Links */}
+        {/* Desktop Navigation */}
         <div className="hidden lg:flex flex-1 justify-center items-center space-x-12 font-semibold text-yellow-400">
           <Link
             to="/caregiver/dashboard"
@@ -67,18 +83,18 @@ export const CaregiverNavbar: React.FC = () => {
           </Link>
         </div>
 
-        {/* Right: Auth Buttons */}
+        {/* Desktop Logout */}
         <div className="hidden lg:flex items-center space-x-3">
-          <Link
-            to="/logout"
+          <button
+            onClick={handleLogout}
             className="bg-white text-[#FF9923] px-4 py-2 rounded-md shadow-md hover:shadow-lg hover:bg-blue-50 transition-all duration-300 flex items-center gap-2 font-semibold"
           >
             <LogOut className="w-4 h-4" />
             Logout
-          </Link>
+          </button>
         </div>
 
-        {/* Mobile Hamburger */}
+        {/* Mobile Menu Toggle */}
         <button
           onClick={() => setMenuOpen(true)}
           className="lg:hidden text-yellow-400 focus:outline-none hover:text-white transition-colors"
@@ -87,7 +103,7 @@ export const CaregiverNavbar: React.FC = () => {
         </button>
       </nav>
 
-      {/* Animated Mobile Overlay Menu */}
+      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
@@ -106,42 +122,41 @@ export const CaregiverNavbar: React.FC = () => {
             </button>
 
             {/* Mobile Links */}
-            <Link 
-              to="/caregiver/dashboard" 
-              onClick={() => setMenuOpen(false)} 
+            <Link
+              to="/caregiver/dashboard"
+              onClick={() => setMenuOpen(false)}
               className="hover:text-white transition flex items-center gap-3"
             >
               <Home className="w-6 h-6" />
               Home
             </Link>
-            <Link 
-              to="/caregiver/notification" 
-              onClick={() => setMenuOpen(false)} 
+
+            <Link
+              to="/caregiver/notification"
+              onClick={() => setMenuOpen(false)}
               className="hover:text-white transition flex items-center gap-3"
             >
               <Bell className="w-6 h-6" />
               Notifications
             </Link>
-            <Link 
-              to="/caregiver/profile" 
-              onClick={() => setMenuOpen(false)} 
+
+            <Link
+              to="/caregiver/profile"
+              onClick={() => setMenuOpen(false)}
               className="hover:text-white transition flex items-center gap-3"
             >
               <User className="w-6 h-6" />
               Profile
             </Link>
 
-            {/* Auth Buttons */}
-            <div className="flex flex-col space-y-4 mt-6">
-              <Link
-                to="/logout"
-                onClick={() => setMenuOpen(false)}
-                className="bg-white text-[#FF9923] px-6 py-2 rounded-md shadow-md hover:shadow-lg hover:bg-blue-50 transition-all flex items-center gap-2 justify-center"
-              >
-                <LogOut className="w-5 h-5" />
-                Logout
-              </Link>
-            </div>
+            {/* Mobile Logout */}
+            <button
+              onClick={handleLogout}
+              className="bg-white text-[#FF9923] px-6 py-2 rounded-md shadow-md hover:shadow-lg hover:bg-blue-50 transition-all flex items-center gap-2 justify-center"
+            >
+              <LogOut className="w-5 h-5" />
+              Logout
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -151,4 +166,3 @@ export const CaregiverNavbar: React.FC = () => {
     </>
   );
 };
-

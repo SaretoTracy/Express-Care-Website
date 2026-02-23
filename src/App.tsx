@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { SwitchProvider } from "./context/GeneralContext";
@@ -10,19 +10,19 @@ function App() {
   return (
     <SwitchProvider>
       <LoadingSpinner />
-      <Router>
-        <ScrollToTop />
-        <Routes>
-          {/* Public Routes */}
-          {PublicRoutes()}
 
-          {/* Protected Routes */}
-          {ProtectedRoutes()}
+      <ScrollToTop />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+      <Routes>
+        {/* Public Routes */}
+        {PublicRoutes()}
+
+        {/* Protected Routes */}
+        {ProtectedRoutes()}
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
       <ToastContainer />
     </SwitchProvider>
   );
