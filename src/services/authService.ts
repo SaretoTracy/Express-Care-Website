@@ -35,10 +35,11 @@ export const registerProvider = async (data: IProviderSignup) => {
     const response = await api.post("/auth/register/provider", data);
     return response.data;
   } catch (error: any) {
-    handleError(error);
+    console.log("FULL ERROR:", error.response?.data);
+    console.log("STATUS:", error.response?.status);
+    throw error;
   }
 };
-
 // ---------------------------------------------------------
 // LOGIN USER
 // ---------------------------------------------------------
