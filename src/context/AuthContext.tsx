@@ -139,7 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         loading,
         setAuthData,
-        updateUserProfile, // 👈 new
+        updateUserProfile, 
         logout,
       }}
     >

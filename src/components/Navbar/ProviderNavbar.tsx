@@ -132,7 +132,7 @@ export const ProviderNavbar: React.FC = () => {
             >
               <PlusCircle className="w-6 h-6" />
               Post Job
-            </Link>
+            </Link> 
             <Link 
               to="/provider/notification" 
               onClick={() => setMenuOpen(false)} 

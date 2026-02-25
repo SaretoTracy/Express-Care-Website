@@ -14,7 +14,7 @@ import ResetPassword from "../pages/AuthPages/ResetPassword";
 import VerifyOtp from "../pages/AuthPages/VerifyOtp";
 
 import ProviderHero from "../pages/ProviderDashboard/ProviderHero";
-import PostJobForm from "../pages/ProviderDashboard/PostJobForm";
+
 import StripePaymentPage from "../pages/ProviderDashboard/StripePaymentPage";
 import CaregiverRequirementsUpload from "../pages/CaregiverDashboard/CaregiverRequirementUploadPage";
 
@@ -38,7 +38,7 @@ const PublicRoutes = () => {
         <Route path="/payment" element={< StripePaymentPage />} />
         <Route path="/providerhero" element={< ProviderHero />} />
         <Route path="/requirements" element={<CaregiverRequirementsUpload />} />
-        <Route path="/postjob" element={< PostJobForm />} />
+        
         <Route path="/verify-otp" element={<VerifyOtp />} />
         <Route path="/reset-password" element={<ResetPassword />} />
       </Route>

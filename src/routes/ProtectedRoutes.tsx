@@ -9,6 +9,7 @@ import CaregiverLayout from "../layouts/CaregiverLayout";
 import ProviderLayout from "../layouts/ProviderLayout";
 import CaregiverRequirementForm from "../pages/CaregiverDashboard/CaregiverRequirementUploadPage";
 import ProfilePage from "../pages/CaregiverDashboard/ProfilePage";
+import PostJobForm from "../pages/ProviderDashboard/PostJobForm";
 
 export default function ProtectedRoutes() {
   return (
@@ -27,6 +28,7 @@ export default function ProtectedRoutes() {
       <Route element={<PrivateRoute allowedRoles={["HOMEREPRESENTATIVE"]} />}>
         <Route element={<ProviderLayout />}>
           <Route path="/provider/dashboard" element={<ProviderLanding />} />
+          <Route path="/provider/postjob" element={< PostJobForm />} />
         </Route>
       </Route>
 

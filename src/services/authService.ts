@@ -3,6 +3,7 @@ import type { ICaregiverSignup } from "../Interfaces/ICaregiverSignUp";
 import type { IProviderSignup } from "../Interfaces/IProviderSignUp";
 import type { ILogin } from "../validation/signupValidation";
 import type { ICareRequirements } from "../Interfaces/ICareRequirements";
+import type { ICreateJob } from "../Interfaces/IJobs";
 
 // CENTRALIZED ERROR HANDLER
 const handleError = (error: any) => {
@@ -139,5 +140,26 @@ export const uploadCaregiverRequirements = async (
     return response.data;
   } catch (error: any) {
     handleError(error);
+  }
+};
+
+
+// ---------------------------------------------------------
+// CREATE JOB
+// ---------------------------------------------------------
+
+// ---------------------------------------------------------
+// CREATE JOB
+// ---------------------------------------------------------
+
+export const createJob = async (data: ICreateJob) => {
+  try {
+    const response = await api.post("/jobs", data);
+    return response.data;
+  } catch (error: any) {
+    console.log("CREATE JOB ERROR:", JSON.stringify(error.response?.data, null, 2));
+    console.log("STATUS:", error.response?.status);
+    console.log("PAYLOAD SENT:", JSON.stringify(data, null, 2));
+    throw error;
   }
 };
