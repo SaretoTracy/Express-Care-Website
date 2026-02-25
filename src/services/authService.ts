@@ -3,7 +3,7 @@ import type { ICaregiverSignup } from "../Interfaces/ICaregiverSignUp";
 import type { IProviderSignup } from "../Interfaces/IProviderSignUp";
 import type { ILogin } from "../validation/signupValidation";
 import type { ICareRequirements } from "../Interfaces/ICareRequirements";
-import type { ICreateJob } from "../Interfaces/IJobs";
+import type { ICreateJob, IJob, IJobList } from "../Interfaces/IJobs";
 
 // CENTRALIZED ERROR HANDLER
 const handleError = (error: any) => {
@@ -163,3 +163,34 @@ export const createJob = async (data: ICreateJob) => {
     throw error;
   }
 };
+
+
+// ---------------------------------------------------------
+// Get Jobs By Home ID
+// ---------------------------------------------------------
+
+
+export const getJobsByHome = async (adultHomeId: string): Promise<IJobList> => {
+  try {
+    const response = await api.get("/jobs/home", { params: { homeId: adultHomeId } });
+    return response.data;
+  } catch (error: any) {
+    console.log("GET JOBS BY HOME ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+// ─── Get Single Job by ID (GET /jobs/:jobId) ──────────────────────────────────
+export const getJobById = async (jobId: string): Promise<IJob> => {
+  try {
+    const response = await api.get(`/jobs/${jobId}`);
+    return response.data;
+  } catch (error: any) {
+    console.log("GET JOB BY ID ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+
+
+
