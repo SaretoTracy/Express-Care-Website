@@ -176,7 +176,11 @@ export const getJobsByHome = async (adultHomeId: string): Promise<IJobList> => {
   }
 };
 
-// ─── Get Single Job by ID (GET /jobs/:jobId) ──────────────────────────────────
+
+// ---------------------------------------------------------
+// Get Single Job by ID
+// ---------------------------------------------------------
+
 export const getJobById = async (jobId: string): Promise<IJob> => {
   try {
     const response = await api.get(`/jobs/${jobId}`);
@@ -190,3 +194,21 @@ export const getJobById = async (jobId: string): Promise<IJob> => {
 
 
 
+// ---------------------------------------------------------
+// Update Is Filled
+// ---------------------------------------------------------
+
+
+
+export const updateJobIsFilled = async (
+  jobId: string,
+  homeId: string,
+  isJobFilled: boolean
+): Promise<void> => {
+  try {
+    await api.patch("/jobs/update/isFilled", { isJobFilled }, { params: { jobId, homeId } });
+  } catch (error: any) {
+    console.log("UPDATE IS FILLED ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};

@@ -17,7 +17,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import type { IJob } from "../../Interfaces/IJobs";
-import { getJobsByHome } from "../../services/authService";
+import { getJobsByHome, updateJobIsFilled } from "../../services/authService";
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -114,10 +114,12 @@ const DeleteConfirmModal: React.FC<{
 // ─── Job Card ─────────────────────────────────────────────────────────────────
 const JobCard: React.FC<{
   job: IJob;
+  adultHomeId: string;
   onViewApplicants: (job: IJob) => void;
   onEdit: (job: IJob) => void;
   onDelete: (job: IJob) => void;
-}> = ({ job, onViewApplicants, onEdit, onDelete }) => {
+  onToggleFilled: (job: IJob, filled: boolean) => void;
+}> = ({ job, adultHomeId, onViewApplicants, onEdit, onDelete, onToggleFilled }) => {
   const status = getJobStatus(job);
 
   const getStatusBadge = () => {
@@ -210,6 +212,25 @@ const JobCard: React.FC<{
           >
             <Eye className="w-4 h-4" />
             View
+          </button>
+        </div>
+
+        {/* Is Filled Toggle */}
+        <div className={`rounded-lg p-3 flex items-center justify-between border ${job.is_filled ? "bg-gray-50 border-gray-200" : "bg-green-50 border-green-200"}`}>
+          <div className="flex items-center gap-2">
+            <span className={`text-sm font-semibold ${job.is_filled ? "text-gray-500" : "text-green-700"}`}>
+              {job.is_filled ? "Position Filled" : "Position Open"}
+            </span>
+          </div>
+          <button
+            onClick={() => onToggleFilled(job, !job.is_filled)}
+            className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none flex-shrink-0 cursor-pointer
+              ${job.is_filled ? "bg-gray-400" : "bg-green-500"}`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200
+                ${job.is_filled ? "translate-x-5" : "translate-x-0"}`}
+            />
           </button>
         </div>
       </div>
@@ -323,6 +344,21 @@ const ProviderDashboard: React.FC = () => {
 
   const handleViewApplicants = (job: IJob) => {
     navigate(`/provider/jobs/${job.id}/applicants`);
+  };
+
+  const handleToggleFilled = async (job: IJob, filled: boolean) => {
+    // Optimistic update
+    setJobs((prev) =>
+      prev.map((j) => (j.id === job.id ? { ...j, is_filled: filled } : j))
+    );
+    try {
+      await updateJobIsFilled(job.id, adultHomeId, filled);
+    } catch {
+      // Revert on failure
+      setJobs((prev) =>
+        prev.map((j) => (j.id === job.id ? { ...j, is_filled: !filled } : j))
+      );
+    }
   };
 
   // Filtered + sorted jobs
@@ -521,9 +557,11 @@ const ProviderDashboard: React.FC = () => {
                 <JobCard
                   key={job.id}
                   job={job}
+                  adultHomeId={adultHomeId}
                   onViewApplicants={handleViewApplicants}
                   onEdit={handleEdit}
                   onDelete={(j) => setJobToDelete(j)}
+                  onToggleFilled={handleToggleFilled}
                 />
               ))}
             </div>
