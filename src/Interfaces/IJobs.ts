@@ -17,7 +17,7 @@ export interface ICreateJob {
 export interface IJob {
   id: string;
   job_role: string;
-  job_type: "FULL_TIME" | "PART_TIME" | "CONTRACT";
+  job_type: "FULL_TIME" | "PART_TIME" ;
   start_date: string;
   end_date: string;
   shift_start: string;

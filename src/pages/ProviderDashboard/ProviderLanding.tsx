@@ -16,8 +16,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import type { IJob } from "../../Interfaces/IJobs";
-import { getJobsByHome, updateJobIsFilled } from "../../services/authService";
+import type { IJob, ICreateJob } from "../../Interfaces/IJobs";
+import { updateJob, getJobsByHome, updateJobIsFilled } from "../../services/authService";
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -56,6 +56,251 @@ const modalVariantsMobile = {
   hidden: { opacity: 0, y: "100%" },
   visible: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: "100%" },
+};
+
+
+// ─── Edit Job Modal ───────────────────────────────────────────────────────────
+const CERTIFICATE_OPTIONS = [
+  "CPR", "ICU", "BLS", "ACLS", "PALS",
+  "First Aid", "Dementia Care", "Medication Administration",
+];
+
+const EditJobModal: React.FC<{
+  job: IJob;
+  adultHomeId: string;
+  onClose: () => void;
+  onSaved: (updated: IJob) => void;
+}> = ({ job, adultHomeId, onClose, onSaved }) => {
+  const [form, setForm] = useState<ICreateJob>({
+    job_role: job.job_role,
+    job_type: job.job_type,
+    start_date: job.start_date.slice(0, 10),
+    end_date: job.end_date.slice(0, 10),
+    shift_start: job.shift_start,
+    shift_end: job.shift_end,
+    payment_rate: job.payment_rate,
+    staff_needed: job.staff_needed,
+    certificates_needed: job.certificates_needed,
+    is_urgent: job.is_urgent,
+    adult_home_id: adultHomeId,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const inputCls =
+    "w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 text-sm focus:outline-none focus:border-[#557a95] transition-colors";
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]:
+        type === "checkbox"
+          ? (e.target as HTMLInputElement).checked
+          : name === "staff_needed"
+          ? Number(value)
+          : value,
+    }));
+  };
+
+  const handleCertToggle = (cert: string) => {
+    setForm((prev) => ({
+      ...prev,
+      certificates_needed: prev.certificates_needed.includes(cert)
+        ? prev.certificates_needed.filter((c) => c !== cert)
+        : [...prev.certificates_needed, cert],
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!form.job_role.trim()) return setError("Job role is required");
+    if (!form.start_date || !form.end_date) return setError("Dates are required");
+    if (form.start_date > form.end_date) return setError("End date must be after start date");
+    if (!form.shift_start || !form.shift_end) return setError("Shift times are required");
+    if (!form.payment_rate || isNaN(Number(form.payment_rate))) return setError("Valid payment rate is required");
+
+    setLoading(true);
+    try {
+      const payload = {
+        ...form,
+        payment_rate: parseFloat(form.payment_rate).toFixed(2),
+        staff_needed: Number(form.staff_needed),
+      };
+      const updated = await updateJob(job.id, adultHomeId, payload);
+      onSaved(updated);
+      onClose();
+    } catch (err: any) {
+      const msg = err.response?.data?.message;
+      setError(Array.isArray(msg) ? msg[0] : msg || "Failed to update job.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      >
+        <motion.div
+          onClick={(e) => e.stopPropagation()}
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        >
+          {/* Modal Header */}
+          <div className="relative bg-gradient-to-r from-[#557a95] to-[#3d6080] px-8 py-6 overflow-hidden flex-shrink-0">
+            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/5" />
+            <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-[#e68a1f]/20" />
+            <div className="relative z-10 flex items-center justify-between">
+              <div>
+                <h2 className="text-white text-xl font-bold tracking-tight">Edit Job</h2>
+                <p className="text-white/70 text-sm mt-0.5">Update the details for this posting</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="text-white/80 hover:text-white text-2xl leading-none cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-[#e68a1f] to-[#f0a84a]" />
+          </div>
+
+          {/* Modal Body — scrollable */}
+          <form onSubmit={handleSubmit} className="px-8 py-6 flex flex-col gap-4 overflow-y-auto flex-1">
+
+            {/* Job Role + Job Type */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-gray-700">Job Role <span className="text-[#e68a1f]">*</span></label>
+                <input type="text" name="job_role" value={form.job_role} onChange={handleChange} placeholder="e.g. HCA, RN, CNA..." required className={inputCls} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-gray-700">Job Type <span className="text-[#e68a1f]">*</span></label>
+                <select name="job_type" value={form.job_type} onChange={handleChange} className={inputCls}>
+                  <option value="FULL_TIME">Full Time</option>
+                  <option value="PART_TIME">Part Time</option>
+                  
+                </select>
+              </div>
+            </div>
+
+            {/* Start + End Date */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-gray-700">Start Date <span className="text-[#e68a1f]">*</span></label>
+                <input type="date" name="start_date" value={form.start_date} onChange={handleChange} required className={inputCls} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-gray-700">End Date <span className="text-[#e68a1f]">*</span></label>
+                <input type="date" name="end_date" value={form.end_date} onChange={handleChange} required className={inputCls} />
+              </div>
+            </div>
+
+            {/* Shift Start + Shift End */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-gray-700">Shift Start <span className="text-[#e68a1f]">*</span></label>
+                <input type="time" name="shift_start" value={form.shift_start} onChange={handleChange} required className={inputCls} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-gray-700">Shift End <span className="text-[#e68a1f]">*</span></label>
+                <input type="time" name="shift_end" value={form.shift_end} onChange={handleChange} required className={inputCls} />
+              </div>
+            </div>
+
+            {/* Payment Rate + Staff Needed */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-gray-700">Payment Rate ($/hr) <span className="text-[#e68a1f]">*</span></label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm pointer-events-none">$</span>
+                  <input type="number" name="payment_rate" value={form.payment_rate} onChange={handleChange} placeholder="0.00" min="0" step="0.01" required className={`${inputCls} pl-7`} />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-gray-700">Staff Needed <span className="text-[#e68a1f]">*</span></label>
+                <input type="number" name="staff_needed" value={form.staff_needed} onChange={handleChange} min="1" max="100" required className={inputCls} />
+              </div>
+            </div>
+
+            {/* Certificates */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-gray-700">Certificates Required</label>
+              <div className="flex flex-wrap gap-2">
+                {CERTIFICATE_OPTIONS.map((cert) => {
+                  const selected = form.certificates_needed.includes(cert);
+                  return (
+                    <button key={cert} type="button" onClick={() => handleCertToggle(cert)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all duration-150 cursor-pointer
+                        ${selected ? "bg-[#557a95] border-[#557a95] text-white shadow-md" : "bg-gray-100 border-gray-200 text-gray-600 hover:border-[#557a95] hover:text-[#557a95]"}`}
+                    >
+                      {selected && <span className="mr-1">✓</span>}
+                      {cert}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Urgent Toggle */}
+            <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border-2 border-gray-200">
+              <button type="button"
+                onClick={() => setForm((p) => ({ ...p, is_urgent: !p.is_urgent }))}
+                className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none flex-shrink-0 cursor-pointer
+                  ${form.is_urgent ? "bg-[#e68a1f]" : "bg-gray-300"}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${form.is_urgent ? "translate-x-5" : "translate-x-0"}`} />
+              </button>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Mark as Urgent</p>
+                <p className="text-xs text-gray-400">This job will be highlighted to available staff</p>
+              </div>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm">
+                <span>⚠️</span><span>{error}</span>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-3 mt-1">
+              <button type="button" onClick={onClose}
+                className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button type="submit" disabled={loading}
+                className={`flex-1 py-3 rounded-xl text-white font-bold text-sm transition-all duration-200
+                  ${loading ? "bg-gray-300 cursor-not-allowed" : "bg-gradient-to-r from-[#e68a1f] to-[#f0a84a] hover:from-[#d47d1a] hover:to-[#e68a1f] shadow-lg cursor-pointer"}`}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    Saving...
+                  </span>
+                ) : "Save Changes →"}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
 };
 
 // ─── Delete Confirm Modal ─────────────────────────────────────────────────────
@@ -290,7 +535,7 @@ const SkeletonCard = () => (
 // ─── Filter options ───────────────────────────────────────────────────────────
 const FILTERS = {
   status: ["Active", "Filled", "Urgent"],
-  employmentType: ["FULL_TIME", "PART_TIME", "CONTRACT"],
+  employmentType: ["FULL_TIME", "PART_TIME", ],
 };
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
@@ -309,6 +554,7 @@ const ProviderDashboard: React.FC = () => {
   const [selectedEmploymentType, setSelectedEmploymentType] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"latest" | "oldest">("latest");
   const [jobToDelete, setJobToDelete] = useState<IJob | null>(null);
+  const [jobToEdit, setJobToEdit] = useState<IJob | null>(null);
 
   // Fetch jobs
   useEffect(() => {
@@ -331,7 +577,11 @@ const ProviderDashboard: React.FC = () => {
   };
 
   const handleEdit = (job: IJob) => {
-    navigate(`/provider/jobs/${job.id}/edit`);
+    setJobToEdit(job);
+  };
+
+  const handleJobSaved = (updated: IJob) => {
+    setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
   };
 
   const handleDeleteConfirm = () => {
@@ -568,6 +818,16 @@ const ProviderDashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {jobToEdit && (
+        <EditJobModal
+          job={jobToEdit}
+          adultHomeId={adultHomeId}
+          onClose={() => setJobToEdit(null)}
+          onSaved={handleJobSaved}
+        />
+      )}
 
       {/* Delete Modal */}
       {jobToDelete && (

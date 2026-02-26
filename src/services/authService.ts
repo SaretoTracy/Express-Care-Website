@@ -212,3 +212,28 @@ export const updateJobIsFilled = async (
     throw error;
   }
 };
+
+
+// ---------------------------------------------------------
+//Update a Job
+// ---------------------------------------------------------
+
+
+
+
+
+export const updateJob = async (
+  jobId: string,
+  homeId: string,
+  data: Partial<ICreateJob>
+): Promise<IJob> => {
+  try {
+    const response = await api.patch("/jobs/update", data, {
+      params: { jobId, homeId },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.log("UPDATE JOB ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
