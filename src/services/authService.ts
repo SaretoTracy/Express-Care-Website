@@ -254,3 +254,17 @@ export const deleteJob = async (jobId: string): Promise<void> => {
     throw error;
   }
 };
+
+// ---------------------------------------------------------
+//Get all Jobs
+// ---------------------------------------------------------
+
+export const getAllJobs = async (): Promise<IJobList> => {
+  try {
+    const response = await api.get("/jobs");
+    return response.data;
+  } catch (error: any) {
+    console.log("GET ALL JOBS ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
