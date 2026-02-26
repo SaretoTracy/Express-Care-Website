@@ -1,6 +1,19 @@
-"use client";
-
-import { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Users,
+  DollarSign,
+  Briefcase,
+  Clock,
+  SlidersHorizontal,
+  Search as SearchIcon,
+  Edit,
+  Trash2,
+  Plus,
+  Eye,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import type { IJob } from "../../Interfaces/IJobs";
@@ -19,211 +32,515 @@ const formatDate = (dateStr: string) =>
   });
 
 const formatTime = (time: string) => {
+  if (!time) return "";
   const [h, m] = time.split(":").map(Number);
   const ampm = h >= 12 ? "PM" : "AM";
   const hour = h % 12 || 12;
   return `${hour}:${m.toString().padStart(2, "0")} ${ampm}`;
 };
 
-const getStatusConfig = (job: IJob) => {
-  if (job.is_filled)
-    return { label: "Filled", badgeCls: "bg-gray-100 text-gray-500", dotCls: "bg-gray-400" };
-  if (job.is_urgent)
-    return { label: "Urgent", badgeCls: "bg-red-50 text-red-600 border border-red-200", dotCls: "bg-red-500 animate-pulse" };
-  return { label: "Open", badgeCls: "bg-green-50 text-green-700 border border-green-200", dotCls: "bg-green-500" };
+const getJobStatus = (job: IJob): "Active" | "Filled" | "Urgent" => {
+  if (job.is_filled) return "Filled";
+  if (job.is_urgent) return "Urgent";
+  return "Active";
 };
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-const SkeletonCard = () => (
-  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 animate-pulse">
-    <div className="flex justify-between items-start mb-5">
-      <div className="space-y-2">
-        <div className="h-5 w-36 bg-gray-200 rounded-lg" />
-        <div className="h-4 w-24 bg-gray-100 rounded-lg" />
-      </div>
-      <div className="h-6 w-16 bg-gray-200 rounded-full" />
-    </div>
-    <div className="grid grid-cols-3 gap-3 mb-5">
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="h-14 bg-gray-100 rounded-xl" />
-      ))}
-    </div>
-    <div className="flex gap-3">
-      <div className="h-9 w-32 bg-gray-200 rounded-xl" />
-      <div className="h-9 w-24 bg-gray-100 rounded-xl" />
-    </div>
-  </div>
-);
+// ─── Animation variants ───────────────────────────────────────────────────────
+const modalVariantsDesktop = {
+  hidden: { opacity: 0, scale: 0.95, y: -10 },
+  visible: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.95, y: -10 },
+};
+
+const modalVariantsMobile = {
+  hidden: { opacity: 0, y: "100%" },
+  visible: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: "100%" },
+};
+
+// ─── Delete Confirm Modal ─────────────────────────────────────────────────────
+const DeleteConfirmModal: React.FC<{
+  job: IJob | null;
+  onClose: () => void;
+  onConfirm: () => void;
+}> = ({ job, onClose, onConfirm }) => {
+  if (!job) return null;
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      >
+        <motion.div
+          onClick={(e) => e.stopPropagation()}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="bg-white rounded-xl p-6 max-w-md w-full"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-red-100 p-3 rounded-full">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800">Delete Job Posting?</h3>
+          </div>
+          <p className="text-gray-600 mb-6">
+            Are you sure you want to delete{" "}
+            <strong>"{job.job_role}"</strong>? This action cannot be undone.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded-lg transition-colors"
+            >
+              Delete
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
 
 // ─── Job Card ─────────────────────────────────────────────────────────────────
-const JobCard = ({ job, onView }: { job: IJob; onView: (id: string) => void }) => {
-  const status = getStatusConfig(job);
+const JobCard: React.FC<{
+  job: IJob;
+  onViewApplicants: (job: IJob) => void;
+  onEdit: (job: IJob) => void;
+  onDelete: (job: IJob) => void;
+}> = ({ job, onViewApplicants, onEdit, onDelete }) => {
+  const status = getJobStatus(job);
+
+  const getStatusBadge = () => {
+    switch (status) {
+      case "Active":
+        return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">Active</span>;
+      case "Filled":
+        return <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium">Filled</span>;
+      case "Urgent":
+        return <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-medium">🔴 Urgent</span>;
+    }
+  };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 p-6">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-5">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-lg font-bold text-gray-800">{job.job_role}</h2>
-            {job.is_urgent && !job.is_filled && (
-              <span className="text-xs font-semibold text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
-                🔴 Urgent
-              </span>
-            )}
+    <div className="w-full border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white hover:shadow-lg transition-shadow">
+      {/* Card Header */}
+      <div className="bg-[#557A95] text-white p-4 rounded-t-xl">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h3 className="font-bold text-lg">{job.job_role}</h3>
+            <p className="font-medium flex items-center mt-1 text-sm opacity-90">
+              <Briefcase className="mr-2 h-4 w-4" />
+              {formatJobType(job.job_type)}
+            </p>
           </div>
-          <span className="text-sm text-gray-400">{formatJobType(job.job_type)}</span>
-        </div>
-        <span className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${status.badgeCls}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${status.dotCls}`} />
-          {status.label}
-        </span>
-      </div>
-
-      {/* Info Grid */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        <div className="bg-gray-50 rounded-xl px-4 py-3">
-          <p className="text-xs text-gray-400 mb-0.5">Pay Rate</p>
-          <p className="text-sm font-bold text-[#e68a1f]">${job.payment_rate}/hr</p>
-        </div>
-        <div className="bg-gray-50 rounded-xl px-4 py-3">
-          <p className="text-xs text-gray-400 mb-0.5">Staff Needed</p>
-          <p className="text-sm font-bold text-gray-700">{job.staff_needed} staff</p>
-        </div>
-        <div className="bg-gray-50 rounded-xl px-4 py-3">
-          <p className="text-xs text-gray-400 mb-0.5">Shift</p>
-          <p className="text-sm font-bold text-gray-700">
-            {formatTime(job.shift_start)} – {formatTime(job.shift_end)}
-          </p>
+          {getStatusBadge()}
         </div>
       </div>
 
-      {/* Dates */}
-      <div className="flex items-center gap-2 mb-5 text-sm text-gray-500">
-        <svg className="w-4 h-4 text-[#557a95]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        <span>{formatDate(job.start_date)} → {formatDate(job.end_date)}</span>
+      {/* Highlights */}
+      <div className="flex p-3 bg-gray-50 justify-between items-center">
+        <div className="flex items-center text-[#557A95] font-semibold">
+          <DollarSign className="mr-1 h-5 w-5" />
+          <span>${job.payment_rate}/hr</span>
+        </div>
+        <div className="flex items-center bg-[#e68a1f] text-white px-3 py-1 rounded-full font-medium text-sm">
+          <Briefcase className="mr-1 h-4 w-4" />
+          <span>{formatJobType(job.job_type)}</span>
+        </div>
       </div>
 
-      {/* Certificates */}
-      {job.certificates_needed.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-5">
-          {job.certificates_needed.map((cert) => (
-            <span
-              key={cert}
-              className="text-xs font-medium bg-[#557a95]/10 text-[#557a95] px-2.5 py-1 rounded-full"
-            >
-              {cert}
-            </span>
-          ))}
+      {/* Body */}
+      <div className="p-4 space-y-3">
+        {/* Shift Time */}
+        <div className="flex items-start">
+          <Clock className="h-5 w-5 mr-2 mt-0.5 text-[#557A95]" />
+          <div>
+            <p className="font-semibold text-gray-700 text-sm">Shift</p>
+            <p className="text-gray-600 text-sm">
+              {formatTime(job.shift_start)} – {formatTime(job.shift_end)}
+            </p>
+          </div>
         </div>
-      )}
 
-      {/* Actions */}
-      <div className="flex gap-3 pt-4 border-t border-gray-100">
-        <button
-          onClick={() => onView(job.id)}
-          className="flex-1 py-2.5 bg-gradient-to-r from-[#557a95] to-[#3d6080] text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
-        >
-          View Applicants
-        </button>
-        <button className="px-4 py-2.5 border-2 border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:border-[#557a95] hover:text-[#557a95] transition-colors cursor-pointer">
-          Edit
-        </button>
+        {/* Certificates */}
+        <div className="flex items-start">
+          <CheckCircle className="h-5 w-5 mr-2 mt-0.5 text-[#557A95]" />
+          <div>
+            <p className="font-semibold text-gray-700 text-sm">Certificates Required</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {job.certificates_needed.length === 0 ? (
+                <span className="text-gray-400 text-xs">None specified</span>
+              ) : (
+                <>
+                  {job.certificates_needed.slice(0, 2).map((cert, i) => (
+                    <span key={i} className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">
+                      {cert}
+                    </span>
+                  ))}
+                  {job.certificates_needed.length > 2 && (
+                    <span className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">
+                      +{job.certificates_needed.length - 2} more
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Staff Needed */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-blue-600" />
+            <span className="font-semibold text-blue-900">{job.staff_needed} Staff Needed</span>
+          </div>
+          <button
+            onClick={() => onViewApplicants(job)}
+            className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1"
+          >
+            <Eye className="w-4 h-4" />
+            View
+          </button>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 pb-4 pt-2">
+        <div className="flex items-center text-gray-500 mb-3 text-sm">
+          <Clock className="mr-1 w-4 h-4" />
+          <span>{formatDate(job.start_date)} → {formatDate(job.end_date)}</span>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => onViewApplicants(job)}
+            className="flex-1 bg-[#557A95] hover:bg-[#476a80] text-white font-semibold py-2 rounded-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Eye className="w-4 h-4" />
+            Applicants
+          </button>
+          <button
+            onClick={() => onEdit(job)}
+            className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-3 py-2 rounded-md transition-colors cursor-pointer"
+            aria-label="Edit job"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onDelete(job)}
+            className="bg-white border border-red-300 hover:bg-red-50 text-red-600 font-medium px-3 py-2 rounded-md transition-colors cursor-pointer"
+            aria-label="Delete job"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
+// ─── Skeleton Card ────────────────────────────────────────────────────────────
+const SkeletonCard = () => (
+  <div className="w-full border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white animate-pulse">
+    <div className="bg-gray-200 h-20 w-full" />
+    <div className="p-4 space-y-3">
+      <div className="h-4 bg-gray-200 rounded w-3/4" />
+      <div className="h-4 bg-gray-100 rounded w-1/2" />
+      <div className="h-10 bg-gray-100 rounded-lg" />
+    </div>
+    <div className="px-4 pb-4 flex gap-2">
+      <div className="flex-1 h-9 bg-gray-200 rounded-md" />
+      <div className="h-9 w-9 bg-gray-100 rounded-md" />
+      <div className="h-9 w-9 bg-gray-100 rounded-md" />
+    </div>
+  </div>
+);
+
+// ─── Filter options ───────────────────────────────────────────────────────────
+const FILTERS = {
+  status: ["Active", "Filled", "Urgent"],
+  employmentType: ["FULL_TIME", "PART_TIME", "CONTRACT"],
+};
+
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
-export default function MyJobs() {
+const ProviderDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const adultHomeId: string = user?.profile?.adultHomeId ?? "";
-  const [jobs, setJobs]       = useState<IJob[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
 
+  const [jobs, setJobs] = useState<IJob[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [query, setQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+  const [selectedEmploymentType, setSelectedEmploymentType] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<"latest" | "oldest">("latest");
+  const [jobToDelete, setJobToDelete] = useState<IJob | null>(null);
+
+  // Fetch jobs
   useEffect(() => {
+    if (!adultHomeId) return;
     const fetchJobs = async () => {
       try {
         const data = await getJobsByHome(adultHomeId);
         setJobs(data);
-      } catch (err: any) {
+      } catch {
         setError("Failed to load jobs. Please try again.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchJobs();
-  }, []);
+  }, [adultHomeId]);
 
-  const handleViewApplicants = (jobId: string) => {
-    navigate(`/provider/jobs/${jobId}/applicants`);
+  const toggleArray = (arr: string[], setter: (v: string[]) => void, value: string) => {
+    arr.includes(value) ? setter(arr.filter((a) => a !== value)) : setter([...arr, value]);
   };
 
-  return (
-    <div className="w-full min-h-screen bg-gray-50 py-10">
-      <div className="max-w-6xl mx-auto px-6">
+  const handleEdit = (job: IJob) => {
+    navigate(`/provider/jobs/${job.id}/edit`);
+  };
 
-        {/* Page Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">My Jobs</h1>
-            <p className="text-gray-400 text-sm mt-1">
-              {loading ? "Loading..." : `${jobs.length} job${jobs.length !== 1 ? "s" : ""} posted`}
-            </p>
+  const handleDeleteConfirm = () => {
+    if (jobToDelete) {
+      // Optimistic UI — remove locally, wire up DELETE API later
+      setJobs((prev) => prev.filter((j) => j.id !== jobToDelete.id));
+      setJobToDelete(null);
+    }
+  };
+
+  const handleViewApplicants = (job: IJob) => {
+    navigate(`/provider/jobs/${job.id}/applicants`);
+  };
+
+  // Filtered + sorted jobs
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let out = [...jobs];
+
+    if (q) {
+      out = out.filter((j) => j.job_role.toLowerCase().includes(q));
+    }
+
+    if (selectedStatus.length > 0) {
+      out = out.filter((j) => selectedStatus.includes(getJobStatus(j)));
+    }
+
+    if (selectedEmploymentType.length > 0) {
+      out = out.filter((j) => selectedEmploymentType.includes(j.job_type));
+    }
+
+    if (sortBy === "oldest") out = out.reverse();
+
+    return out;
+  }, [jobs, query, selectedStatus, selectedEmploymentType, sortBy]);
+
+  const activeJobs = jobs.filter((j) => !j.is_filled).length;
+  const urgentJobs = jobs.filter((j) => j.is_urgent && !j.is_filled).length;
+  const totalStaffNeeded = jobs.reduce((sum, j) => sum + j.staff_needed, 0);
+
+  return (
+    <div className="min-h-screen bg-[#F3F6F9] p-6">
+
+      {/* ── Stats Bar ── */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-[#557A95]">
+          <p className="text-gray-600 text-sm">Total Jobs</p>
+          <p className="text-2xl font-bold text-gray-800">{jobs.length}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-green-500">
+          <p className="text-gray-600 text-sm">Active Jobs</p>
+          <p className="text-2xl font-bold text-gray-800">{activeJobs}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
+          <p className="text-gray-600 text-sm">Total Staff Needed</p>
+          <p className="text-2xl font-bold text-gray-800">{totalStaffNeeded}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-[#e68a1f]">
+          <p className="text-gray-600 text-sm">Urgent Jobs</p>
+          <p className="text-2xl font-bold text-gray-800">{urgentJobs}</p>
+        </div>
+      </div>
+
+      {/* ── Search / Sort / Filter Bar ── */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="relative flex-1">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by job role..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#557A95] text-sm"
+            />
           </div>
-          <button
-            onClick={() => navigate("/provider/post-job")}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#e68a1f] to-[#f0a84a] text-white text-sm font-bold rounded-xl shadow hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#557A95]"
           >
-            <span className="text-lg leading-none">+</span>
-            Post a Job
-          </button>
+            <option value="latest">Sort: Latest</option>
+            <option value="oldest">Oldest</option>
+          </select>
         </div>
 
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 rounded-2xl px-6 py-4 mb-6 text-sm flex items-center gap-2">
-            <span>⚠️</span> {error}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="text-gray-800 font-semibold">{filtered.length}</span>
+            <span>Jobs</span>
           </div>
-        )}
-
-        {/* Loading Skeletons */}
-        {loading && (
-          <div className="grid gap-5">
-            {[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!loading && !error && jobs.length === 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-14 text-center">
-            <div className="text-5xl mb-4">📋</div>
-            <h2 className="text-lg font-bold text-gray-700 mb-2">No jobs posted yet</h2>
-            <p className="text-gray-400 text-sm mb-6">Post your first job to start connecting with caregivers.</p>
-            <button
-              onClick={() => navigate("/provider/post-job")}
-              className="px-6 py-3 bg-gradient-to-r from-[#e68a1f] to-[#f0a84a] text-white font-bold text-sm rounded-xl shadow hover:opacity-90 transition-opacity cursor-pointer"
-            >
-              Post a Job
-            </button>
-          </div>
-        )}
-
-        {/* Jobs Grid */}
-        {!loading && !error && jobs.length > 0 && (
-          <div className="grid gap-5">
-            {jobs.map((job) => (
-              <JobCard key={job.id} job={job} onView={handleViewApplicants} />
-            ))}
-          </div>
-        )}
-
+          <button
+            onClick={() => setShowFilters((s) => !s)}
+            className="flex items-center gap-2 bg-white p-2 rounded-md shadow-sm border border-gray-200 hover:bg-gray-50 cursor-pointer"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            <span className="hidden md:inline text-sm">Filters</span>
+          </button>
+          <button
+            onClick={() => navigate("/provider/post-job")}
+            className="flex items-center gap-2 bg-[#e68a1f] hover:bg-[#d47d1a] text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden md:inline text-sm">Post Job</span>
+            <span className="md:hidden text-sm">New</span>
+          </button>
+        </div>
       </div>
+
+      {/* ── Error ── */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-6 py-4 mb-6 text-sm">
+          ⚠️ {error}
+        </div>
+      )}
+
+      {/* ── Content: Sidebar + Grid ── */}
+      <div className="grid grid-cols-12 gap-6">
+
+        {/* Sidebar Filters */}
+        <div className={`col-span-12 md:col-span-3 ${!showFilters ? "hidden md:block" : "block"}`}>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 h-fit">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-lg text-[#557A95]">Filters</h3>
+              <button className="text-gray-500 md:hidden" onClick={() => setShowFilters(false)}>✕</button>
+            </div>
+
+            <div className="mb-4">
+              <h4 className="font-semibold text-gray-700 mb-2 text-sm">Status</h4>
+              <div className="space-y-2">
+                {FILTERS.status.map((item) => (
+                  <label key={item} className="flex items-center gap-2 text-gray-600 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedStatus.includes(item)}
+                      onChange={() => toggleArray(selectedStatus, setSelectedStatus, item)}
+                      className="h-4 w-4 text-[#557A95] rounded"
+                    />
+                    {item}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <h4 className="font-semibold text-gray-700 mb-2 text-sm">Employment Type</h4>
+              <div className="space-y-2">
+                {FILTERS.employmentType.map((item) => (
+                  <label key={item} className="flex items-center gap-2 text-gray-600 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedEmploymentType.includes(item)}
+                      onChange={() => toggleArray(selectedEmploymentType, setSelectedEmploymentType, item)}
+                      className="h-4 w-4 text-[#557A95] rounded"
+                    />
+                    {formatJobType(item)}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => { setSelectedStatus([]); setSelectedEmploymentType([]); }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 py-2 rounded-md text-sm cursor-pointer"
+              >
+                Clear
+              </button>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="flex-1 bg-[#557A95] hover:bg-[#476a80] text-white py-2 rounded-md text-sm cursor-pointer"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Job Cards Grid */}
+        <div className="col-span-12 md:col-span-9">
+
+          {/* Loading */}
+          {loading && (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          )}
+
+          {/* Empty */}
+          {!loading && !error && filtered.length === 0 && (
+            <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+              <Briefcase className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">No jobs found</h3>
+              <p className="text-gray-500 mb-4">Try adjusting your filters or post a new job</p>
+              <button
+                onClick={() => navigate("/provider/post-job")}
+                className="bg-[#e68a1f] hover:bg-[#d47d1a] text-white px-6 py-2 rounded-lg font-medium inline-flex items-center gap-2 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                Post Your First Job
+              </button>
+            </div>
+          )}
+
+          {/* Cards */}
+          {!loading && !error && filtered.length > 0 && (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filtered.map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  onViewApplicants={handleViewApplicants}
+                  onEdit={handleEdit}
+                  onDelete={(j) => setJobToDelete(j)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Delete Modal */}
+      {jobToDelete && (
+        <DeleteConfirmModal
+          job={jobToDelete}
+          onClose={() => setJobToDelete(null)}
+          onConfirm={handleDeleteConfirm}
+        />
+      )}
     </div>
   );
-}
+};
+
+export default ProviderDashboard;

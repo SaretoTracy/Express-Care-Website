@@ -148,10 +148,6 @@ export const uploadCaregiverRequirements = async (
 // CREATE JOB
 // ---------------------------------------------------------
 
-// ---------------------------------------------------------
-// CREATE JOB
-// ---------------------------------------------------------
-
 export const createJob = async (data: ICreateJob) => {
   try {
     const response = await api.post("/jobs", data);
