@@ -237,3 +237,20 @@ export const updateJob = async (
     throw error;
   }
 };
+
+
+
+// ---------------------------------------------------------
+//Delete a job
+// ---------------------------------------------------------
+
+export const deleteJob = async (jobId: string): Promise<void> => {
+  try {
+    const response = await api.delete("/jobs", { params: { jobId } });
+    console.log("DELETE JOB SUCCESS:", response.status, JSON.stringify(response.data, null, 2));
+  } catch (error: any) {
+    console.log("DELETE JOB ERROR status:", error.response?.status);
+    console.log("DELETE JOB ERROR body:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};

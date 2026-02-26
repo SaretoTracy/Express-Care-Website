@@ -17,7 +17,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import type { IJob, ICreateJob } from "../../Interfaces/IJobs";
-import { updateJob, getJobsByHome, updateJobIsFilled } from "../../services/authService";
+import { updateJob, getJobsByHome, deleteJob, updateJobIsFilled } from "../../services/authService";
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -189,7 +189,7 @@ const EditJobModal: React.FC<{
                 <select name="job_type" value={form.job_type} onChange={handleChange} className={inputCls}>
                   <option value="FULL_TIME">Full Time</option>
                   <option value="PART_TIME">Part Time</option>
-                  
+               
                 </select>
               </div>
             </div>
@@ -306,9 +306,11 @@ const EditJobModal: React.FC<{
 // ─── Delete Confirm Modal ─────────────────────────────────────────────────────
 const DeleteConfirmModal: React.FC<{
   job: IJob | null;
+  loading: boolean;
+  error: string | null;
   onClose: () => void;
   onConfirm: () => void;
-}> = ({ job, onClose, onConfirm }) => {
+}> = ({ job, loading, error, onClose, onConfirm }) => {
   if (!job) return null;
   return (
     <AnimatePresence>
@@ -332,22 +334,37 @@ const DeleteConfirmModal: React.FC<{
             </div>
             <h3 className="text-xl font-bold text-gray-800">Delete Job Posting?</h3>
           </div>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 mb-4">
             Are you sure you want to delete{" "}
             <strong>"{job.job_role}"</strong>? This action cannot be undone.
           </p>
+          {error && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm mb-4">
+              <span>⚠️</span><span>{error}</span>
+            </div>
+          )}
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded-lg transition-colors"
+              disabled={loading}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={onConfirm}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded-lg transition-colors"
+              disabled={loading}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded-lg transition-colors disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
             >
-              Delete
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  Deleting...
+                </>
+              ) : "Delete"}
             </button>
           </div>
         </motion.div>
@@ -535,7 +552,7 @@ const SkeletonCard = () => (
 // ─── Filter options ───────────────────────────────────────────────────────────
 const FILTERS = {
   status: ["Active", "Filled", "Urgent"],
-  employmentType: ["FULL_TIME", "PART_TIME", ],
+  employmentType: ["FULL_TIME", "PART_TIME"],
 };
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
@@ -584,11 +601,22 @@ const ProviderDashboard: React.FC = () => {
     setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
   };
 
-  const handleDeleteConfirm = () => {
-    if (jobToDelete) {
-      // Optimistic UI — remove locally, wire up DELETE API later
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDeleteConfirm = async () => {
+    if (!jobToDelete) return;
+    setDeleteLoading(true);
+    setDeleteError(null);
+    try {
+      await deleteJob(jobToDelete.id);
       setJobs((prev) => prev.filter((j) => j.id !== jobToDelete.id));
       setJobToDelete(null);
+    } catch (err: any) {
+      const msg = err.response?.data?.message;
+      setDeleteError(Array.isArray(msg) ? msg[0] : msg || "Failed to delete job. Please try again.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -695,7 +723,7 @@ const ProviderDashboard: React.FC = () => {
             <span className="hidden md:inline text-sm">Filters</span>
           </button>
           <button
-            onClick={() => navigate("/provider/post-job")}
+            onClick={() => navigate("/provider/postjob")}
             className="flex items-center gap-2 bg-[#e68a1f] hover:bg-[#d47d1a] text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -833,7 +861,9 @@ const ProviderDashboard: React.FC = () => {
       {jobToDelete && (
         <DeleteConfirmModal
           job={jobToDelete}
-          onClose={() => setJobToDelete(null)}
+          loading={deleteLoading}
+          error={deleteError}
+          onClose={() => { setJobToDelete(null); setDeleteError(null); }}
           onConfirm={handleDeleteConfirm}
         />
       )}
