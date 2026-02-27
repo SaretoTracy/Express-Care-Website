@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import type { IJob, IJobApplication } from "../../Interfaces/IJobs";
-import { getAllJobs, applyForJob } from "../../services/authService";
+import { getAllJobs, applyForJob, getApplicationsByCaregiver } from "../../services/authService";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatJobType = (type: string) =>
@@ -77,6 +77,29 @@ const SkeletonCard = () => (
     </div>
   </div>
 );
+
+// ─── Application Status Badge (used on card) ──────────────────────────────────
+const ApplicationStatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  if (status === "ACCEPTED") {
+    return (
+      <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full text-xs font-semibold">
+        ✓ Accepted
+      </span>
+    );
+  }
+  if (status === "REJECTED") {
+    return (
+      <span className="inline-flex items-center gap-1 bg-red-100 text-red-600 border border-red-200 px-2 py-0.5 rounded-full text-xs font-semibold">
+        ✗ Rejected
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full text-xs font-semibold">
+      ⏳ Applied
+    </span>
+  );
+};
 
 // ─── Job Details Modal ────────────────────────────────────────────────────────
 const JobDetailsModal: React.FC<{
@@ -210,36 +233,48 @@ const JobDetailsModal: React.FC<{
             {/* Posted date */}
             <p className="text-xs text-gray-400">Posted: {formatDate(job.createdAt)}</p>
 
-            {/* Application Status or Apply Button */}
+            {/* ── Application Status or Apply Button ── */}
             {job.is_filled ? (
               <div className="bg-gray-100 text-gray-500 text-center py-3 rounded-lg font-semibold text-sm">
                 This position has been filled
               </div>
             ) : application ? (
-              <div className={`rounded-lg px-5 py-4 text-center border-2 ${
+              <div className={`rounded-xl px-5 py-5 border-2 ${
                 application.status === "ACCEPTED"
-                  ? "bg-green-50 border-green-200"
+                  ? "bg-green-50 border-green-300"
                   : application.status === "REJECTED"
-                  ? "bg-red-50 border-red-200"
+                  ? "bg-red-50 border-red-300"
                   : "bg-blue-50 border-blue-200"
               }`}>
-                <p className={`font-bold text-lg ${
-                  application.status === "ACCEPTED" ? "text-green-700"
-                  : application.status === "REJECTED" ? "text-red-600"
-                  : "text-blue-700"
-                }`}>
-                  {application.status === "ACCEPTED" && "🎉 Application Accepted!"}
-                  {application.status === "REJECTED" && "❌ Application Rejected"}
-                  {application.status === "PENDING" && "⏳ Application Pending"}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
+                <div className="flex items-center justify-between mb-2">
+                  <p className={`font-bold text-lg ${
+                    application.status === "ACCEPTED" ? "text-green-700"
+                    : application.status === "REJECTED" ? "text-red-600"
+                    : "text-blue-700"
+                  }`}>
+                    {application.status === "ACCEPTED" && "🎉 Application Accepted!"}
+                    {application.status === "REJECTED" && "❌ Application Rejected"}
+                    {application.status === "PENDING" && "⏳ Application Pending"}
+                  </p>
+                </div>
+                <p className="text-sm text-gray-600">
                   {application.status === "ACCEPTED" && "Congratulations! The provider has accepted your application."}
                   {application.status === "REJECTED" && "Unfortunately your application was not accepted this time."}
                   {application.status === "PENDING" && "Your application has been submitted. Please wait for the provider's response."}
                 </p>
-                <p className="text-xs text-gray-400 mt-2">
-                  Applied: {new Date(application.appliedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                </p>
+                <div className="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-4 text-xs text-gray-500">
+                  <span>Applied: {new Date(application.appliedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                  {application.status === "ACCEPTED" && application.acceptedAt && (
+                    <span className="text-green-600 font-medium">
+                      Accepted: {new Date(application.acceptedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </span>
+                  )}
+                  {application.status === "REJECTED" && application.rejectedAt && (
+                    <span className="text-red-500 font-medium">
+                      Rejected: {new Date(application.rejectedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </span>
+                  )}
+                </div>
               </div>
             ) : (
               <>
@@ -284,16 +319,27 @@ const JobCard: React.FC<{
   onView: (job: IJob) => void;
   onToggleSave: (id: string) => void;
   isSaved: boolean;
-}> = ({ job, onView, onToggleSave, isSaved }) => {
+  application: IJobApplication | null;
+}> = ({ job, onView, onToggleSave, isSaved, application }) => {
   return (
     <div className="w-full border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white hover:shadow-lg transition-shadow">
       {/* Header */}
       <div className="bg-[#557A95] text-white p-4 rounded-t-xl">
-        <h3 className="font-bold text-lg">{job.job_role}</h3>
-        <p className="font-medium flex items-center mt-1 text-sm opacity-90">
-          <Briefcase className="mr-2 h-4 w-4" />
-          {formatJobType(job.job_type)}
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="font-bold text-lg">{job.job_role}</h3>
+            <p className="font-medium flex items-center mt-1 text-sm opacity-90">
+              <Briefcase className="mr-2 h-4 w-4" />
+              {formatJobType(job.job_type)}
+            </p>
+          </div>
+          {/* Show application status badge in the card header */}
+          {application && (
+            <div className="mt-1">
+              <ApplicationStatusBadge status={application.status} />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Highlights */}
@@ -386,7 +432,7 @@ const JobCard: React.FC<{
           onClick={() => onView(job)}
           className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-[#557A95] font-semibold py-2 rounded-md transition-colors cursor-pointer"
         >
-          View Details
+          {application ? "View Status" : "View Details"}
         </button>
       </div>
     </div>
@@ -413,9 +459,10 @@ const CaregiverDashboard: React.FC = () => {
   const [applyError, setApplyError] = useState<string | null>(null);
 
   const { user } = useAuth();
-  const caregiverId: string = user?.profile?.id ?? "";
+  // Support both profile shapes
+  const caregiverId: string = user?.caregiver?.id ?? user?.profile?.id ?? "";
 
-  // Fetch all jobs
+  // ── Fetch all jobs ────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchJobs = async () => {
       try {
@@ -429,6 +476,25 @@ const CaregiverDashboard: React.FC = () => {
     };
     fetchJobs();
   }, []);
+
+  // ── Fetch caregiver's existing applications on mount (persists after reload) ──
+  useEffect(() => {
+    if (!caregiverId) return;
+    const fetchMyApplications = async () => {
+      try {
+        const data = await getApplicationsByCaregiver(caregiverId);
+        // Build a jobId → application map
+        const map: Record<string, IJobApplication> = {};
+        data.forEach((app) => {
+          map[app.job_id] = app;
+        });
+        setApplications(map);
+      } catch {
+        // Silently fail — not critical for the page to load
+      }
+    };
+    fetchMyApplications();
+  }, [caregiverId]);
 
   // Persist saved jobs
   useEffect(() => { writeSavedJobs(savedJobs); }, [savedJobs]);
@@ -614,6 +680,7 @@ const CaregiverDashboard: React.FC = () => {
                   onView={(j) => setSelectedJob(j)}
                   onToggleSave={onToggleSave}
                   isSaved={savedJobs.includes(job.id)}
+                  application={applications[job.id] ?? null}
                 />
               ))}
             </div>

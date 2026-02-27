@@ -13,11 +13,27 @@ import {
   Eye,
   AlertCircle,
   CheckCircle,
+  Mail,
+  Phone,
+  MapPin,
+  User,
+  X,
+  Calendar,
+  ChevronRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import type { IJob, ICreateJob } from "../../Interfaces/IJobs";
-import { updateJob, getJobsByHome, deleteJob, updateJobIsFilled } from "../../services/authService";
+import type { IJob, IJobApplication, ICreateJob } from "../../Interfaces/IJobs";
+import {
+  updateJob,
+  getJobsByHome,
+  deleteJob,
+  updateJobIsFilled,
+  getApplicationsByJob,
+  acceptApplication,
+  rejectApplication,
+  getCaregiverById,   // ← you may need to add this service call (see note below)
+} from "../../services/authService";
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -45,19 +61,451 @@ const getJobStatus = (job: IJob): "Active" | "Filled" | "Urgent" => {
   return "Active";
 };
 
-// ─── Animation variants ───────────────────────────────────────────────────────
-const modalVariantsDesktop = {
-  hidden: { opacity: 0, scale: 0.95, y: -10 },
-  visible: { opacity: 1, scale: 1, y: 0 },
-  exit: { opacity: 0, scale: 0.95, y: -10 },
+// ─── Caregiver detail type ─────────────────────────────────────────────────────
+interface ICaregiverDetail {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  city: string;
+  state?: string;
+  street?: string;
+  zipcode?: string;
+  gender?: string;
+  dateOfBirth?: string;
+}
+
+// ─── Caregiver Detail Modal ───────────────────────────────────────────────────
+const CaregiverDetailModal: React.FC<{
+  caregiver: ICaregiverDetail | null;
+  loading: boolean;
+  onClose: () => void;
+}> = ({ caregiver, loading, onClose }) => {
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      >
+        <motion.div
+          onClick={(e) => e.stopPropagation()}
+          initial={{ opacity: 0, scale: 0.92, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.92, y: 20 }}
+          transition={{ type: "spring", stiffness: 320, damping: 30 }}
+          className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden"
+        >
+          {/* Header */}
+          <div className="relative bg-gradient-to-r from-[#557a95] to-[#3d6080] px-7 py-6 overflow-hidden">
+            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5" />
+            <div className="absolute -bottom-5 -left-5 w-20 h-20 rounded-full bg-[#e68a1f]/20" />
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-white font-bold text-lg leading-tight">
+                    {loading ? "Loading..." : caregiver ? `${caregiver.firstName} ${caregiver.lastName}` : "Caregiver Details"}
+                  </h2>
+                  <p className="text-white/70 text-xs mt-0.5">Applicant Profile</p>
+                </div>
+              </div>
+              <button onClick={onClose} className="text-white/80 hover:text-white cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-[#e68a1f] to-[#f0a84a]" />
+          </div>
+
+          {/* Body */}
+          <div className="p-6">
+            {loading && (
+              <div className="space-y-4 animate-pulse">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-gray-200 rounded-full" />
+                    <div className="flex-1">
+                      <div className="h-3 bg-gray-200 rounded w-20 mb-1.5" />
+                      <div className="h-4 bg-gray-100 rounded w-40" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!loading && !caregiver && (
+              <p className="text-gray-500 text-center py-6">Could not load caregiver details.</p>
+            )}
+
+            {!loading && caregiver && (
+              <div className="space-y-4">
+                {/* Full Name */}
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                  <div className="w-9 h-9 rounded-full bg-[#557a95]/10 flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-[#557a95]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium">Full Name</p>
+                    <p className="text-gray-800 font-semibold">{caregiver.firstName} {caregiver.lastName}</p>
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                  <div className="w-9 h-9 rounded-full bg-[#557a95]/10 flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-4 h-4 text-[#557a95]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium">Email</p>
+                    <p className="text-gray-800 font-semibold">{caregiver.email}</p>
+                  </div>
+                </div>
+
+                {/* Phone */}
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                  <div className="w-9 h-9 rounded-full bg-[#557a95]/10 flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-4 h-4 text-[#557a95]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium">Phone Number</p>
+                    <p className="text-gray-800 font-semibold">{caregiver.phoneNumber}</p>
+                  </div>
+                </div>
+
+                {/* City */}
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                  <div className="w-9 h-9 rounded-full bg-[#557a95]/10 flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-4 h-4 text-[#557a95]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium">Location</p>
+                    <p className="text-gray-800 font-semibold">
+                      {[caregiver.city, caregiver.state, caregiver.zipcode].filter(Boolean).join(", ")}
+                    </p>
+                    {caregiver.street && (
+                      <p className="text-gray-500 text-xs mt-0.5">{caregiver.street}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Gender + DOB (if available) */}
+                {(caregiver.gender || caregiver.dateOfBirth) && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {caregiver.gender && (
+                      <div className="p-3 bg-gray-50 rounded-xl">
+                        <p className="text-xs text-gray-400 font-medium">Gender</p>
+                        <p className="text-gray-800 font-semibold text-sm mt-0.5">{caregiver.gender}</p>
+                      </div>
+                    )}
+                    {caregiver.dateOfBirth && (
+                      <div className="p-3 bg-gray-50 rounded-xl">
+                        <p className="text-xs text-gray-400 font-medium">Date of Birth</p>
+                        <p className="text-gray-800 font-semibold text-sm mt-0.5">
+                          {new Date(caregiver.dateOfBirth).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 pb-5">
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
 };
 
-const modalVariantsMobile = {
-  hidden: { opacity: 0, y: "100%" },
-  visible: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: "100%" },
-};
 
+// ─── Applicants Modal ─────────────────────────────────────────────────────────
+const ApplicantsModal: React.FC<{
+  job: IJob;
+  adultHomeId: string;
+  onClose: () => void;
+}> = ({ job, adultHomeId, onClose }) => {
+  const [applications, setApplications] = useState<IJobApplication[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Caregiver detail modal state
+  const [selectedCaregiver, setSelectedCaregiver] = useState<ICaregiverDetail | null>(null);
+  const [caregiverLoading, setCaregiverLoading]   = useState(false);
+  const [showCaregiverModal, setShowCaregiverModal] = useState(false);
+
+  // Cache of caregiverId → detail so we don't re-fetch
+  const [caregiverCache, setCaregiverCache] = useState<Record<string, ICaregiverDetail>>({});
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const data = await getApplicationsByJob(job.id);
+        setApplications(data);
+      } catch {
+        setError("Failed to load applicants.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [job.id]);
+
+  const handleAction = async (
+    application: IJobApplication,
+    action: "accept" | "reject"
+  ) => {
+    setActionLoading(application.id);
+    try {
+      const updated = action === "accept"
+        ? await acceptApplication(application.id, adultHomeId, application.caregiver_id)
+        : await rejectApplication(application.id, adultHomeId, application.caregiver_id);
+
+      setApplications((prev) =>
+        prev.map((a) => (a.id === updated.id ? updated : a))
+      );
+    } catch {
+      // silently fail
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleViewApplicant = async (caregiverId: string) => {
+    setShowCaregiverModal(true);
+
+    // Use cache if available
+    if (caregiverCache[caregiverId]) {
+      setSelectedCaregiver(caregiverCache[caregiverId]);
+      return;
+    }
+
+    setCaregiverLoading(true);
+    setSelectedCaregiver(null);
+    try {
+      const detail = await getCaregiverById(caregiverId);
+      setCaregiverCache((prev) => ({ ...prev, [caregiverId]: detail }));
+      setSelectedCaregiver(detail);
+    } catch {
+      setSelectedCaregiver(null);
+    } finally {
+      setCaregiverLoading(false);
+    }
+  };
+
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case "ACCEPTED": return { label: "Accepted", cls: "bg-green-100 text-green-700 border-green-200" };
+      case "REJECTED": return { label: "Rejected", cls: "bg-red-100 text-red-600 border-red-200" };
+      default:         return { label: "Pending",  cls: "bg-blue-100 text-blue-700 border-blue-200" };
+    }
+  };
+
+  return (
+    <>
+      <AnimatePresence>
+        <motion.div
+          className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+        >
+          <motion.div
+            onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+          >
+            {/* Header */}
+            <div className="relative bg-gradient-to-r from-[#557a95] to-[#3d6080] px-8 py-6 flex-shrink-0 overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/5" />
+              <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-[#e68a1f]/20" />
+              <div className="relative z-10 flex items-start justify-between">
+                <div>
+                  <h2 className="text-white text-xl font-bold">Applicants for {job.job_role}</h2>
+                  <p className="text-white/70 text-sm mt-0.5">
+                    {loading ? "Loading..." : `${applications.length} application${applications.length !== 1 ? "s" : ""}`}
+                  </p>
+                </div>
+                <button onClick={onClose} className="text-white/80 hover:text-white cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-[#e68a1f] to-[#f0a84a]" />
+            </div>
+
+            {/* Body */}
+            <div className="overflow-y-auto flex-1 p-6">
+
+              {/* Loading */}
+              {loading && (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="border border-gray-100 rounded-xl p-5 animate-pulse">
+                      <div className="flex justify-between mb-3">
+                        <div className="h-5 w-32 bg-gray-200 rounded" />
+                        <div className="h-5 w-16 bg-gray-200 rounded-full" />
+                      </div>
+                      <div className="h-4 w-48 bg-gray-100 rounded mb-2" />
+                      <div className="h-4 w-36 bg-gray-100 rounded" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Error */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm">
+                  ⚠️ {error}
+                </div>
+              )}
+
+              {/* Empty */}
+              {!loading && !error && applications.length === 0 && (
+                <div className="text-center py-14">
+                  <Users className="w-14 h-14 mx-auto mb-4 text-gray-200" />
+                  <p className="text-gray-500 font-semibold">No applicants yet</p>
+                  <p className="text-gray-400 text-sm mt-1">Check back later for new applications</p>
+                </div>
+              )}
+
+              {/* Applicant Cards */}
+              {!loading && !error && applications.length > 0 && (
+                <div className="space-y-4">
+                  {applications.map((app) => {
+                    const status = getStatusConfig(app.status);
+                    const isActioning = actionLoading === app.id;
+
+                    return (
+                      <div key={app.id} className="border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow bg-white">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            {/* Applied date */}
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              Applied: {new Date(app.appliedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </p>
+                          </div>
+                          <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${status.cls}`}>
+                            {status.label}
+                          </span>
+                        </div>
+
+                        {/* ── View Applicant Button ── */}
+                        <button
+                          onClick={() => handleViewApplicant(app.caregiver_id)}
+                          className="w-full flex items-center justify-between bg-[#f0f5f9] hover:bg-[#e2ecf4] border border-[#c8dae8] rounded-xl px-4 py-3 transition-colors cursor-pointer group mb-4"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-[#557a95]/20 flex items-center justify-center">
+                              <User className="w-4 h-4 text-[#557a95]" />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-sm font-semibold text-[#557a95]">View Applicant</p>
+                              <p className="text-xs text-gray-400">See full caregiver details</p>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-[#557a95] group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+
+                        {/* Action Buttons — only show if still PENDING */}
+                        {app.status === "PENDING" && (
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => handleAction(app, "accept")}
+                              disabled={isActioning}
+                              className="flex-1 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-200 text-white font-semibold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2"
+                            >
+                              {isActioning ? (
+                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                                </svg>
+                              ) : <CheckCircle className="w-4 h-4" />}
+                              Accept
+                            </button>
+                            <button
+                              onClick={() => handleAction(app, "reject")}
+                              disabled={isActioning}
+                              className="flex-1 py-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-200 text-white font-semibold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2"
+                            >
+                              {isActioning ? (
+                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                                </svg>
+                              ) : <AlertCircle className="w-4 h-4" />}
+                              Reject
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Accepted confirmation */}
+                        {app.status === "ACCEPTED" && (
+                          <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
+                            <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                            <div>
+                              <p className="text-sm font-semibold text-green-700">Application Accepted</p>
+                              {app.acceptedAt && (
+                                <p className="text-xs text-green-600">
+                                  on {new Date(app.acceptedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Rejected confirmation */}
+                        {app.status === "REJECTED" && (
+                          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
+                            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                            <div>
+                              <p className="text-sm font-semibold text-red-600">Application Rejected</p>
+                              {app.rejectedAt && (
+                                <p className="text-xs text-red-500">
+                                  on {new Date(app.rejectedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Caregiver Detail Popup — rendered on top of the applicants modal */}
+      {showCaregiverModal && (
+        <CaregiverDetailModal
+          caregiver={selectedCaregiver}
+          loading={caregiverLoading}
+          onClose={() => { setShowCaregiverModal(false); setSelectedCaregiver(null); }}
+        />
+      )}
+    </>
+  );
+};
 
 // ─── Edit Job Modal ───────────────────────────────────────────────────────────
 const CERTIFICATE_OPTIONS = [
@@ -156,7 +604,6 @@ const EditJobModal: React.FC<{
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
         >
-          {/* Modal Header */}
           <div className="relative bg-gradient-to-r from-[#557a95] to-[#3d6080] px-8 py-6 overflow-hidden flex-shrink-0">
             <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/5" />
             <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-[#e68a1f]/20" />
@@ -165,20 +612,12 @@ const EditJobModal: React.FC<{
                 <h2 className="text-white text-xl font-bold tracking-tight">Edit Job</h2>
                 <p className="text-white/70 text-sm mt-0.5">Update the details for this posting</p>
               </div>
-              <button
-                onClick={onClose}
-                className="text-white/80 hover:text-white text-2xl leading-none cursor-pointer"
-              >
-                ✕
-              </button>
+              <button onClick={onClose} className="text-white/80 hover:text-white text-2xl leading-none cursor-pointer">✕</button>
             </div>
             <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-[#e68a1f] to-[#f0a84a]" />
           </div>
 
-          {/* Modal Body — scrollable */}
           <form onSubmit={handleSubmit} className="px-8 py-6 flex flex-col gap-4 overflow-y-auto flex-1">
-
-            {/* Job Role + Job Type */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-gray-700">Job Role <span className="text-[#e68a1f]">*</span></label>
@@ -189,12 +628,11 @@ const EditJobModal: React.FC<{
                 <select name="job_type" value={form.job_type} onChange={handleChange} className={inputCls}>
                   <option value="FULL_TIME">Full Time</option>
                   <option value="PART_TIME">Part Time</option>
-               
+                  <option value="CONTRACT">Contract</option>
                 </select>
               </div>
             </div>
 
-            {/* Start + End Date */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-gray-700">Start Date <span className="text-[#e68a1f]">*</span></label>
@@ -206,7 +644,6 @@ const EditJobModal: React.FC<{
               </div>
             </div>
 
-            {/* Shift Start + Shift End */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-gray-700">Shift Start <span className="text-[#e68a1f]">*</span></label>
@@ -218,7 +655,6 @@ const EditJobModal: React.FC<{
               </div>
             </div>
 
-            {/* Payment Rate + Staff Needed */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-gray-700">Payment Rate ($/hr) <span className="text-[#e68a1f]">*</span></label>
@@ -233,7 +669,6 @@ const EditJobModal: React.FC<{
               </div>
             </div>
 
-            {/* Certificates */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-gray-700">Certificates Required</label>
               <div className="flex flex-wrap gap-2">
@@ -252,7 +687,6 @@ const EditJobModal: React.FC<{
               </div>
             </div>
 
-            {/* Urgent Toggle */}
             <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border-2 border-gray-200">
               <button type="button"
                 onClick={() => setForm((p) => ({ ...p, is_urgent: !p.is_urgent }))}
@@ -267,14 +701,12 @@ const EditJobModal: React.FC<{
               </div>
             </div>
 
-            {/* Error */}
             {error && (
               <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm">
                 <span>⚠️</span><span>{error}</span>
               </div>
             )}
 
-            {/* Actions */}
             <div className="flex gap-3 mt-1">
               <button type="button" onClick={onClose}
                 className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors cursor-pointer"
@@ -344,16 +776,12 @@ const DeleteConfirmModal: React.FC<{
             </div>
           )}
           <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              disabled={loading}
+            <button onClick={onClose} disabled={loading}
               className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>
-            <button
-              onClick={onConfirm}
-              disabled={loading}
+            <button onClick={onConfirm} disabled={loading}
               className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded-lg transition-colors disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
             >
               {loading ? (
@@ -386,18 +814,14 @@ const JobCard: React.FC<{
 
   const getStatusBadge = () => {
     switch (status) {
-      case "Active":
-        return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">Active</span>;
-      case "Filled":
-        return <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium">Filled</span>;
-      case "Urgent":
-        return <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-medium">🔴 Urgent</span>;
+      case "Active":  return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">Active</span>;
+      case "Filled":  return <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium">Filled</span>;
+      case "Urgent":  return <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-medium">🔴 Urgent</span>;
     }
   };
 
   return (
     <div className="w-full border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white hover:shadow-lg transition-shadow">
-      {/* Card Header */}
       <div className="bg-[#557A95] text-white p-4 rounded-t-xl">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -411,7 +835,6 @@ const JobCard: React.FC<{
         </div>
       </div>
 
-      {/* Highlights */}
       <div className="flex p-3 bg-gray-50 justify-between items-center">
         <div className="flex items-center text-[#557A95] font-semibold">
           <DollarSign className="mr-1 h-5 w-5" />
@@ -423,20 +846,15 @@ const JobCard: React.FC<{
         </div>
       </div>
 
-      {/* Body */}
       <div className="p-4 space-y-3">
-        {/* Shift Time */}
         <div className="flex items-start">
           <Clock className="h-5 w-5 mr-2 mt-0.5 text-[#557A95]" />
           <div>
             <p className="font-semibold text-gray-700 text-sm">Shift</p>
-            <p className="text-gray-600 text-sm">
-              {formatTime(job.shift_start)} – {formatTime(job.shift_end)}
-            </p>
+            <p className="text-gray-600 text-sm">{formatTime(job.shift_start)} – {formatTime(job.shift_end)}</p>
           </div>
         </div>
 
-        {/* Certificates */}
         <div className="flex items-start">
           <CheckCircle className="h-5 w-5 mr-2 mt-0.5 text-[#557A95]" />
           <div>
@@ -447,14 +865,10 @@ const JobCard: React.FC<{
               ) : (
                 <>
                   {job.certificates_needed.slice(0, 2).map((cert, i) => (
-                    <span key={i} className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">
-                      {cert}
-                    </span>
+                    <span key={i} className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">{cert}</span>
                   ))}
                   {job.certificates_needed.length > 2 && (
-                    <span className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">
-                      +{job.certificates_needed.length - 2} more
-                    </span>
+                    <span className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">+{job.certificates_needed.length - 2} more</span>
                   )}
                 </>
               )}
@@ -462,7 +876,6 @@ const JobCard: React.FC<{
           </div>
         </div>
 
-        {/* Staff Needed */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-blue-600" />
@@ -470,40 +883,31 @@ const JobCard: React.FC<{
           </div>
           <button
             onClick={() => onViewApplicants(job)}
-            className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1"
+            className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1 cursor-pointer"
           >
             <Eye className="w-4 h-4" />
             View
           </button>
         </div>
 
-        {/* Is Filled Toggle */}
         <div className={`rounded-lg p-3 flex items-center justify-between border ${job.is_filled ? "bg-gray-50 border-gray-200" : "bg-green-50 border-green-200"}`}>
-          <div className="flex items-center gap-2">
-            <span className={`text-sm font-semibold ${job.is_filled ? "text-gray-500" : "text-green-700"}`}>
-              {job.is_filled ? "Position Filled" : "Position Open"}
-            </span>
-          </div>
+          <span className={`text-sm font-semibold ${job.is_filled ? "text-gray-500" : "text-green-700"}`}>
+            {job.is_filled ? "Position Filled" : "Position Open"}
+          </span>
           <button
             onClick={() => onToggleFilled(job, !job.is_filled)}
-            className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none flex-shrink-0 cursor-pointer
-              ${job.is_filled ? "bg-gray-400" : "bg-green-500"}`}
+            className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none flex-shrink-0 cursor-pointer ${job.is_filled ? "bg-gray-400" : "bg-green-500"}`}
           >
-            <span
-              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200
-                ${job.is_filled ? "translate-x-5" : "translate-x-0"}`}
-            />
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${job.is_filled ? "translate-x-5" : "translate-x-0"}`} />
           </button>
         </div>
       </div>
 
-      {/* Footer */}
       <div className="px-4 pb-4 pt-2">
         <div className="flex items-center text-gray-500 mb-3 text-sm">
           <Clock className="mr-1 w-4 h-4" />
           <span>{formatDate(job.start_date)} → {formatDate(job.end_date)}</span>
         </div>
-
         <div className="flex gap-2">
           <button
             onClick={() => onViewApplicants(job)}
@@ -512,15 +916,13 @@ const JobCard: React.FC<{
             <Eye className="w-4 h-4" />
             Applicants
           </button>
-          <button
-            onClick={() => onEdit(job)}
+          <button onClick={() => onEdit(job)}
             className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-3 py-2 rounded-md transition-colors cursor-pointer"
             aria-label="Edit job"
           >
             <Edit className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => onDelete(job)}
+          <button onClick={() => onDelete(job)}
             className="bg-white border border-red-300 hover:bg-red-50 text-red-600 font-medium px-3 py-2 rounded-md transition-colors cursor-pointer"
             aria-label="Delete job"
           >
@@ -552,14 +954,14 @@ const SkeletonCard = () => (
 // ─── Filter options ───────────────────────────────────────────────────────────
 const FILTERS = {
   status: ["Active", "Filled", "Urgent"],
-  employmentType: ["FULL_TIME", "PART_TIME"],
+  employmentType: ["FULL_TIME", "PART_TIME", "CONTRACT"],
 };
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 const ProviderDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const adultHomeId: string = user?.profile?.adultHomeId ?? "";
+  const adultHomeId: string = user?.adultHomeRepresentative?.adultHomeId ?? user?.profile?.adultHomeId ?? "";
 
   const [jobs, setJobs] = useState<IJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -572,8 +974,8 @@ const ProviderDashboard: React.FC = () => {
   const [sortBy, setSortBy] = useState<"latest" | "oldest">("latest");
   const [jobToDelete, setJobToDelete] = useState<IJob | null>(null);
   const [jobToEdit, setJobToEdit] = useState<IJob | null>(null);
+  const [jobForApplicants, setJobForApplicants] = useState<IJob | null>(null);
 
-  // Fetch jobs
   useEffect(() => {
     if (!adultHomeId) return;
     const fetchJobs = async () => {
@@ -591,10 +993,6 @@ const ProviderDashboard: React.FC = () => {
 
   const toggleArray = (arr: string[], setter: (v: string[]) => void, value: string) => {
     arr.includes(value) ? setter(arr.filter((a) => a !== value)) : setter([...arr, value]);
-  };
-
-  const handleEdit = (job: IJob) => {
-    setJobToEdit(job);
   };
 
   const handleJobSaved = (updated: IJob) => {
@@ -620,44 +1018,22 @@ const ProviderDashboard: React.FC = () => {
     }
   };
 
-  const handleViewApplicants = (job: IJob) => {
-    navigate(`/provider/jobs/${job.id}/applicants`);
-  };
-
   const handleToggleFilled = async (job: IJob, filled: boolean) => {
-    // Optimistic update
-    setJobs((prev) =>
-      prev.map((j) => (j.id === job.id ? { ...j, is_filled: filled } : j))
-    );
+    setJobs((prev) => prev.map((j) => (j.id === job.id ? { ...j, is_filled: filled } : j)));
     try {
       await updateJobIsFilled(job.id, adultHomeId, filled);
     } catch {
-      // Revert on failure
-      setJobs((prev) =>
-        prev.map((j) => (j.id === job.id ? { ...j, is_filled: !filled } : j))
-      );
+      setJobs((prev) => prev.map((j) => (j.id === job.id ? { ...j, is_filled: !filled } : j)));
     }
   };
 
-  // Filtered + sorted jobs
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let out = [...jobs];
-
-    if (q) {
-      out = out.filter((j) => j.job_role.toLowerCase().includes(q));
-    }
-
-    if (selectedStatus.length > 0) {
-      out = out.filter((j) => selectedStatus.includes(getJobStatus(j)));
-    }
-
-    if (selectedEmploymentType.length > 0) {
-      out = out.filter((j) => selectedEmploymentType.includes(j.job_type));
-    }
-
+    if (q) out = out.filter((j) => j.job_role.toLowerCase().includes(q));
+    if (selectedStatus.length > 0) out = out.filter((j) => selectedStatus.includes(getJobStatus(j)));
+    if (selectedEmploymentType.length > 0) out = out.filter((j) => selectedEmploymentType.includes(j.job_type));
     if (sortBy === "oldest") out = out.reverse();
-
     return out;
   }, [jobs, query, selectedStatus, selectedEmploymentType, sortBy]);
 
@@ -668,7 +1044,7 @@ const ProviderDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F3F6F9] p-6">
 
-      {/* ── Stats Bar ── */}
+      {/* Stats Bar */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-[#557A95]">
           <p className="text-gray-600 text-sm">Total Jobs</p>
@@ -688,7 +1064,7 @@ const ProviderDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Search / Sort / Filter Bar ── */}
+      {/* Search / Sort / Filter Bar */}
       <div className="bg-white rounded-xl shadow-sm p-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div className="flex items-center gap-3 flex-1">
           <div className="relative flex-1">
@@ -709,7 +1085,6 @@ const ProviderDashboard: React.FC = () => {
             <option value="oldest">Oldest</option>
           </select>
         </div>
-
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <span className="text-gray-800 font-semibold">{filtered.length}</span>
@@ -723,7 +1098,7 @@ const ProviderDashboard: React.FC = () => {
             <span className="hidden md:inline text-sm">Filters</span>
           </button>
           <button
-            onClick={() => navigate("/provider/postjob")}
+            onClick={() => navigate("/provider/post-job")}
             className="flex items-center gap-2 bg-[#e68a1f] hover:bg-[#d47d1a] text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -733,32 +1108,27 @@ const ProviderDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Error ── */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-6 py-4 mb-6 text-sm">
           ⚠️ {error}
         </div>
       )}
 
-      {/* ── Content: Sidebar + Grid ── */}
       <div className="grid grid-cols-12 gap-6">
 
-        {/* Sidebar Filters */}
+        {/* Sidebar */}
         <div className={`col-span-12 md:col-span-3 ${!showFilters ? "hidden md:block" : "block"}`}>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 h-fit">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-lg text-[#557A95]">Filters</h3>
               <button className="text-gray-500 md:hidden" onClick={() => setShowFilters(false)}>✕</button>
             </div>
-
             <div className="mb-4">
               <h4 className="font-semibold text-gray-700 mb-2 text-sm">Status</h4>
               <div className="space-y-2">
                 {FILTERS.status.map((item) => (
                   <label key={item} className="flex items-center gap-2 text-gray-600 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedStatus.includes(item)}
+                    <input type="checkbox" checked={selectedStatus.includes(item)}
                       onChange={() => toggleArray(selectedStatus, setSelectedStatus, item)}
                       className="h-4 w-4 text-[#557A95] rounded"
                     />
@@ -767,15 +1137,12 @@ const ProviderDashboard: React.FC = () => {
                 ))}
               </div>
             </div>
-
             <div className="mb-4">
               <h4 className="font-semibold text-gray-700 mb-2 text-sm">Employment Type</h4>
               <div className="space-y-2">
                 {FILTERS.employmentType.map((item) => (
                   <label key={item} className="flex items-center gap-2 text-gray-600 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedEmploymentType.includes(item)}
+                    <input type="checkbox" checked={selectedEmploymentType.includes(item)}
                       onChange={() => toggleArray(selectedEmploymentType, setSelectedEmploymentType, item)}
                       className="h-4 w-4 text-[#557A95] rounded"
                     />
@@ -784,7 +1151,6 @@ const ProviderDashboard: React.FC = () => {
                 ))}
               </div>
             </div>
-
             <div className="mt-4 flex gap-2">
               <button
                 onClick={() => { setSelectedStatus([]); setSelectedEmploymentType([]); }}
@@ -804,15 +1170,11 @@ const ProviderDashboard: React.FC = () => {
 
         {/* Job Cards Grid */}
         <div className="col-span-12 md:col-span-9">
-
-          {/* Loading */}
           {loading && (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}
             </div>
           )}
-
-          {/* Empty */}
           {!loading && !error && filtered.length === 0 && (
             <div className="bg-white rounded-xl shadow-sm p-12 text-center">
               <Briefcase className="w-16 h-16 mx-auto mb-4 text-gray-300" />
@@ -827,8 +1189,6 @@ const ProviderDashboard: React.FC = () => {
               </button>
             </div>
           )}
-
-          {/* Cards */}
           {!loading && !error && filtered.length > 0 && (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered.map((job) => (
@@ -836,8 +1196,8 @@ const ProviderDashboard: React.FC = () => {
                   key={job.id}
                   job={job}
                   adultHomeId={adultHomeId}
-                  onViewApplicants={handleViewApplicants}
-                  onEdit={handleEdit}
+                  onViewApplicants={(j) => setJobForApplicants(j)}
+                  onEdit={(j) => setJobToEdit(j)}
                   onDelete={(j) => setJobToDelete(j)}
                   onToggleFilled={handleToggleFilled}
                 />
@@ -847,7 +1207,13 @@ const ProviderDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Edit Modal */}
+      {jobForApplicants && (
+        <ApplicantsModal
+          job={jobForApplicants}
+          adultHomeId={adultHomeId}
+          onClose={() => setJobForApplicants(null)}
+        />
+      )}
       {jobToEdit && (
         <EditJobModal
           job={jobToEdit}
@@ -856,8 +1222,6 @@ const ProviderDashboard: React.FC = () => {
           onSaved={handleJobSaved}
         />
       )}
-
-      {/* Delete Modal */}
       {jobToDelete && (
         <DeleteConfirmModal
           job={jobToDelete}

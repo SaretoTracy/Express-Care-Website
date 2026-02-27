@@ -298,3 +298,79 @@ export const getApplicationById = async (applicationId: string): Promise<IJobApp
     throw error;
   }
 };
+
+
+
+
+// ─── Get All Applications by Job (GET /jobs/application/job?jobId=xxx) ─────────
+export const getApplicationsByJob = async (jobId: string): Promise<IJobApplication[]> => {
+  try {
+    const response = await api.get("/jobs/application/job", { params: { jobId } });
+    return response.data;
+  } catch (error: any) {
+    console.log("GET APPLICATIONS BY JOB ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+// ─── Get All Applications by Caregiver (GET /jobs/application/caregiver?caregiverId=xxx) ──
+export const getApplicationsByCaregiver = async (caregiverId: string): Promise<IJobApplication[]> => {
+  try {
+    const response = await api.get("/jobs/application/caregiver", { params: { caregiverId } });
+    return response.data;
+  } catch (error: any) {
+    console.log("GET APPLICATIONS BY CAREGIVER ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+// ─── Accept Application (PATCH /jobs/application/accept) ─────────────────────
+export const acceptApplication = async (
+  applicationId: string,
+  homeId: string,
+  caregiverId: string
+): Promise<IJobApplication> => {
+  try {
+    const response = await api.patch("/jobs/application/accept", {
+      applicationId,
+      homeId,
+      caregiverId,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.log("ACCEPT APPLICATION ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+// ─── Reject Application (PATCH /jobs/application/reject) ─────────────────────
+export const rejectApplication = async (
+  applicationId: string,
+  homeId: string,
+  caregiverId: string
+): Promise<IJobApplication> => {
+  try {
+    const response = await api.patch("/jobs/application/reject", {
+      applicationId,
+      homeId,
+      caregiverId,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.log("REJECT APPLICATION ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+// ─── Get Caregiver by ID (GET /caregiver/:id) ────────────────────────────────
+// Add this to your existing authService.ts file
+
+export const getCaregiverById = async (caregiverId: string) => {
+  try {
+    const response = await api.get(`/caregiver/${caregiverId}`);
+    return response.data;
+  } catch (error: any) {
+    console.log("GET CAREGIVER BY ID ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
