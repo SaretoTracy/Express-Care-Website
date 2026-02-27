@@ -80,19 +80,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   -------------------------------------------------
   */
 
+  const AUTH_STORAGE_KEYS = ["user", "accessToken", "refreshToken"] as const;
+
+  const clearAuthStorage = () => {
+    AUTH_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+  };
+
   const logout = async () => {
     try {
       await logoutUser();
     } catch (err) {
       console.error("Logout API failed:", err);
+    } finally {
+      clearAuthStorage();
+      setUser(null);
+      toast.success("Logged out");
+      window.location.href = "/login";
     }
-
-    localStorage.clear();
-    setUser(null);
-
-    toast.success("Logged out");
-
-    window.location.href = "/login";
   };
 
   /*
@@ -139,7 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         loading,
         setAuthData,
-        updateUserProfile, 
+        updateUserProfile,
         logout,
       }}
     >

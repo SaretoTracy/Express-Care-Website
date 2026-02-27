@@ -93,6 +93,9 @@ const CaregiverDetailModal: React.FC<{
       >
         <motion.div
           onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="caregiver-detail-title"
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 20 }}
@@ -109,7 +112,10 @@ const CaregiverDetailModal: React.FC<{
                   <User className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-white font-bold text-lg leading-tight">
+                  <h2
+                    id="caregiver-detail-title"
+                    className="text-white font-bold text-lg leading-tight"
+                  >
                     {loading ? "Loading..." : caregiver ? `${caregiver.firstName} ${caregiver.lastName}` : "Caregiver Details"}
                   </h2>
                   <p className="text-white/70 text-xs mt-0.5">Applicant Profile</p>
@@ -327,6 +333,9 @@ const ApplicantsModal: React.FC<{
         >
           <motion.div
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="applicants-modal-title"
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -339,7 +348,12 @@ const ApplicantsModal: React.FC<{
               <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-[#e68a1f]/20" />
               <div className="relative z-10 flex items-start justify-between">
                 <div>
-                  <h2 className="text-white text-xl font-bold">Applicants for {job.job_role}</h2>
+                  <h2
+                    id="applicants-modal-title"
+                    className="text-white text-xl font-bold"
+                  >
+                    Applicants for {job.job_role}
+                  </h2>
                   <p className="text-white/70 text-sm mt-0.5">
                     {loading ? "Loading..." : `${applications.length} application${applications.length !== 1 ? "s" : ""}`}
                   </p>
@@ -598,6 +612,9 @@ const EditJobModal: React.FC<{
       >
         <motion.div
           onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-job-title"
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -609,7 +626,12 @@ const EditJobModal: React.FC<{
             <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-[#e68a1f]/20" />
             <div className="relative z-10 flex items-center justify-between">
               <div>
-                <h2 className="text-white text-xl font-bold tracking-tight">Edit Job</h2>
+                <h2
+                  id="edit-job-title"
+                  className="text-white text-xl font-bold tracking-tight"
+                >
+                  Edit Job
+                </h2>
                 <p className="text-white/70 text-sm mt-0.5">Update the details for this posting</p>
               </div>
               <button onClick={onClose} className="text-white/80 hover:text-white text-2xl leading-none cursor-pointer">✕</button>
@@ -755,6 +777,9 @@ const DeleteConfirmModal: React.FC<{
       >
         <motion.div
           onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-job-title"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
@@ -764,7 +789,12 @@ const DeleteConfirmModal: React.FC<{
             <div className="bg-red-100 p-3 rounded-full">
               <AlertCircle className="w-6 h-6 text-red-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-800">Delete Job Posting?</h3>
+            <h3
+              id="delete-job-title"
+              className="text-xl font-bold text-gray-800"
+            >
+              Delete Job Posting?
+            </h3>
           </div>
           <p className="text-gray-600 mb-4">
             Are you sure you want to delete{" "}
@@ -802,14 +832,23 @@ const DeleteConfirmModal: React.FC<{
 };
 
 // ─── Job Card ─────────────────────────────────────────────────────────────────
-const JobCard: React.FC<{
+type ProviderJobCardProps = {
   job: IJob;
   adultHomeId: string;
   onViewApplicants: (job: IJob) => void;
   onEdit: (job: IJob) => void;
   onDelete: (job: IJob) => void;
   onToggleFilled: (job: IJob, filled: boolean) => void;
-}> = ({ job, adultHomeId, onViewApplicants, onEdit, onDelete, onToggleFilled }) => {
+};
+
+const JobCardComponent: React.FC<ProviderJobCardProps> = ({
+  job,
+  adultHomeId,
+  onViewApplicants,
+  onEdit,
+  onDelete,
+  onToggleFilled,
+}) => {
   const status = getJobStatus(job);
 
   const getStatusBadge = () => {
@@ -933,6 +972,8 @@ const JobCard: React.FC<{
     </div>
   );
 };
+
+const JobCard = React.memo(JobCardComponent);
 
 // ─── Skeleton Card ────────────────────────────────────────────────────────────
 const SkeletonCard = () => (
