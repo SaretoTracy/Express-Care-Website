@@ -31,5 +31,23 @@ export interface IJob {
   updatedAt: string;
 }
 
-// ─── Jobs List (GET /jobs/home) ───────────────────────────────────────────────
+// ─── Jobs List ────────────────────────────────────────────────────────────────
 export type IJobList = IJob[];
+
+// ─── Apply for Job Payload (POST /jobs/application) ──────────────────────────
+export interface IApplyJob {
+  caregiver_id: string;
+  job_id: string;
+}
+
+// ─── Job Application Response (GET /jobs/application/:id) ────────────────────
+export interface IJobApplication {
+  id: string;
+  caregiver_id: string;
+  job_id: string;
+  status: "PENDING" | "ACCEPTED" | "REJECTED";
+  appliedAt: string;
+  acceptedAt: string | null;
+  rejectedAt: string | null;
+  updatedAt: string;
+}

@@ -3,7 +3,7 @@ import type { ICaregiverSignup } from "../Interfaces/ICaregiverSignUp";
 import type { IProviderSignup } from "../Interfaces/IProviderSignUp";
 import type { ILogin } from "../validation/signupValidation";
 import type { ICareRequirements } from "../Interfaces/ICareRequirements";
-import type { ICreateJob, IJob, IJobList } from "../Interfaces/IJobs";
+import type { IApplyJob, ICreateJob, IJob, IJobApplication, IJobList } from "../Interfaces/IJobs";
 
 // CENTRALIZED ERROR HANDLER
 const handleError = (error: any) => {
@@ -265,6 +265,36 @@ export const getAllJobs = async (): Promise<IJobList> => {
     return response.data;
   } catch (error: any) {
     console.log("GET ALL JOBS ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+
+// ---------------------------------------------------------
+//Apply for a Job
+// ---------------------------------------------------------
+
+export const applyForJob = async (data: IApplyJob): Promise<IJobApplication> => {
+  try {
+    const response = await api.post("/jobs/application", data);
+    return response.data;
+  } catch (error: any) {
+    console.log("APPLY JOB ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+// ---------------------------------------------------------
+// Get Application by ID
+// ---------------------------------------------------------
+
+
+export const getApplicationById = async (applicationId: string): Promise<IJobApplication> => {
+  try {
+    const response = await api.get(`/jobs/application/${applicationId}`);
+    return response.data;
+  } catch (error: any) {
+    console.log("GET APPLICATION ERROR:", JSON.stringify(error.response?.data, null, 2));
     throw error;
   }
 };

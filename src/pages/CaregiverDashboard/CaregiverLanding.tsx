@@ -13,9 +13,9 @@ import {
   Bookmark,
   CheckCircle,
 } from "lucide-react";
-import type { IJob } from "../../Interfaces/IJobs";
-import { getAllJobs } from "../../services/authService";
-
+import { useAuth } from "../../context/AuthContext";
+import type { IJob, IJobApplication } from "../../Interfaces/IJobs";
+import { getAllJobs, applyForJob } from "../../services/authService";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatJobType = (type: string) =>
@@ -48,7 +48,7 @@ const writeSavedJobs = (arr: string[]) => {
 
 // ─── Filter options ───────────────────────────────────────────────────────────
 const FILTERS = {
-  workingSchedule: ["FULL_TIME", "PART_TIME"],
+  workingSchedule: ["FULL_TIME", "PART_TIME", "CONTRACT"],
 };
 
 // ─── Animation variants ───────────────────────────────────────────────────────
@@ -84,7 +84,11 @@ const JobDetailsModal: React.FC<{
   onClose: () => void;
   onToggleSave: (id: string) => void;
   isSaved: boolean;
-}> = ({ job, onClose, onToggleSave, isSaved }) => {
+  application: IJobApplication | null;
+  onApply: (jobId: string) => Promise<void>;
+  applyLoading: boolean;
+  applyError: string | null;
+}> = ({ job, onClose, onToggleSave, isSaved, application, onApply, applyLoading, applyError }) => {
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth <= 640 : false
   );
@@ -206,12 +210,66 @@ const JobDetailsModal: React.FC<{
             {/* Posted date */}
             <p className="text-xs text-gray-400">Posted: {formatDate(job.createdAt)}</p>
 
-            {/* Apply */}
-            {!job.is_filled && (
-              <button className="w-full bg-[#e68a1f] hover:bg-[#d47d1a] text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-3 cursor-pointer transition-colors">
-                <Award className="w-4 h-4" />
-                Apply Now
-              </button>
+            {/* Application Status or Apply Button */}
+            {job.is_filled ? (
+              <div className="bg-gray-100 text-gray-500 text-center py-3 rounded-lg font-semibold text-sm">
+                This position has been filled
+              </div>
+            ) : application ? (
+              <div className={`rounded-lg px-5 py-4 text-center border-2 ${
+                application.status === "ACCEPTED"
+                  ? "bg-green-50 border-green-200"
+                  : application.status === "REJECTED"
+                  ? "bg-red-50 border-red-200"
+                  : "bg-blue-50 border-blue-200"
+              }`}>
+                <p className={`font-bold text-lg ${
+                  application.status === "ACCEPTED" ? "text-green-700"
+                  : application.status === "REJECTED" ? "text-red-600"
+                  : "text-blue-700"
+                }`}>
+                  {application.status === "ACCEPTED" && "🎉 Application Accepted!"}
+                  {application.status === "REJECTED" && "❌ Application Rejected"}
+                  {application.status === "PENDING" && "⏳ Application Pending"}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {application.status === "ACCEPTED" && "Congratulations! The provider has accepted your application."}
+                  {application.status === "REJECTED" && "Unfortunately your application was not accepted this time."}
+                  {application.status === "PENDING" && "Your application has been submitted. Please wait for the provider's response."}
+                </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  Applied: {new Date(application.appliedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </p>
+              </div>
+            ) : (
+              <>
+                {applyError && (
+                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm">
+                    <span>⚠️</span><span>{applyError}</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => onApply(job.id)}
+                  disabled={applyLoading}
+                  className={`w-full text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-3 transition-colors
+                    ${applyLoading ? "bg-gray-300 cursor-not-allowed" : "bg-[#e68a1f] hover:bg-[#d47d1a] cursor-pointer"}`}
+                >
+                  {applyLoading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Award className="w-4 h-4" />
+                      Apply Now
+                    </>
+                  )}
+                </button>
+              </>
             )}
           </div>
         </motion.div>
@@ -349,6 +407,14 @@ const CaregiverDashboard: React.FC = () => {
   const [selectedJob, setSelectedJob] = useState<IJob | null>(null);
   const [savedJobs, setSavedJobs] = useState<string[]>(readSavedJobs());
 
+  // applications: map of jobId -> IJobApplication
+  const [applications, setApplications] = useState<Record<string, IJobApplication>>({});
+  const [applyLoading, setApplyLoading] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+
+  const { user } = useAuth();
+  const caregiverId: string = user?.profile?.id ?? "";
+
   // Fetch all jobs
   useEffect(() => {
     const fetchJobs = async () => {
@@ -373,6 +439,21 @@ const CaregiverDashboard: React.FC = () => {
 
   const onToggleSave = (id: string) => {
     setSavedJobs((prev) => prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]);
+  };
+
+  const handleApply = async (jobId: string) => {
+    if (!caregiverId) return setApplyError("Your caregiver profile was not found. Please log in again.");
+    setApplyLoading(true);
+    setApplyError(null);
+    try {
+      const application = await applyForJob({ caregiver_id: caregiverId, job_id: jobId });
+      setApplications((prev) => ({ ...prev, [jobId]: application }));
+    } catch (err: any) {
+      const msg = err.response?.data?.message;
+      setApplyError(Array.isArray(msg) ? msg[0] : msg || "Failed to apply. Please try again.");
+    } finally {
+      setApplyLoading(false);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -544,9 +625,13 @@ const CaregiverDashboard: React.FC = () => {
       {selectedJob && (
         <JobDetailsModal
           job={selectedJob}
-          onClose={() => setSelectedJob(null)}
+          onClose={() => { setSelectedJob(null); setApplyError(null); }}
           onToggleSave={onToggleSave}
           isSaved={savedJobs.includes(selectedJob.id)}
+          application={applications[selectedJob.id] ?? null}
+          onApply={handleApply}
+          applyLoading={applyLoading}
+          applyError={applyError}
         />
       )}
     </div>
