@@ -14,4 +14,5 @@ export interface IProviderSignup {
   adult_home_street: string;
   adult_home_zipcode: string;
   adult_home_website?: string;
+  homeDescription: string; 
 }

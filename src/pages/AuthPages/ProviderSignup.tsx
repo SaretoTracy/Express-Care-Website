@@ -7,20 +7,26 @@ import { Submitbutton } from "../../components/ButtonComponents/Submitbutton";
 import { ErrorValidation } from "../../components/ErrorValidation";
 import { formPhoneNumber } from "../../components/globalFunctions";
 import type { IProviderSignup } from "../../Interfaces/IProviderSignUp";
-import { providerRepValidator, providerHomeInfoValidator } from "../../validation/signupValidation";
 import { registerProvider } from "../../services/authService";
 
-// Step 1: Representative Form
+/* ============================
+   STEP 1: Representative Form
+============================ */
+
 interface IProviderRepForm {
   first_name: string;
   last_name: string;
   email: string;
+  phone_number: string;
   password: string;
   confirm_password: string;
   job_title: string;
 }
 
-// Step 2: Home Form
+/* ============================
+   STEP 2: Home Info Form
+============================ */
+
 interface IProviderHomeInfoForm {
   adult_home_name: string;
   adult_home_email: string;
@@ -30,15 +36,18 @@ interface IProviderHomeInfoForm {
   adult_home_street: string;
   adult_home_zipcode: string;
   adult_home_website?: string;
+  homeDescription: string;
 }
 
 export const ProviderSignup: React.FC = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2>(1);
-  const [phoneNumber, setPhoneNumber] = useState("");
   const [step1Data, setStep1Data] = useState<IProviderRepForm | null>(null);
 
-  // Step 1 Form
+  /* ============================
+     STEP 1 FORM
+  ============================ */
+
   const {
     register,
     handleSubmit,
@@ -46,60 +55,67 @@ export const ProviderSignup: React.FC = () => {
     watch,
   } = useForm<IProviderRepForm>({ mode: "onChange" });
 
-  // Step 2 Form
+  /* ============================
+     STEP 2 FORM
+  ============================ */
+
   const {
     register: register2,
     handleSubmit: handleSubmit2,
     formState: { errors: errors2, isValid: isValid2 },
   } = useForm<IProviderHomeInfoForm>({ mode: "onChange" });
 
-  const handlePhoneNumberFormatting = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setPhoneNumber(formPhoneNumber(e.target.value));
+  /* ============================
+     STEP 1 SUBMIT
+  ============================ */
 
-  // Navigate from Step 1 to Step 2
   const handleRepSubmit: SubmitHandler<IProviderRepForm> = (data) => {
-    try {
-      const validated = providerRepValidator.parse(data);
-      setStep1Data(validated);
-      setStep(2);
-    } catch (error: any) {
-      toast.error(error?.errors?.[0]?.message || "Validation failed");
-    }
+    setStep1Data(data);
+    setStep(2);
   };
 
-  // Submit Step 2 + send full payload
-  const handleHomeInfoSubmit: SubmitHandler<IProviderHomeInfoForm> = async (data) => {
+  /* ============================
+     STEP 2 SUBMIT
+  ============================ */
+
+  const handleHomeInfoSubmit: SubmitHandler<IProviderHomeInfoForm> = async (
+    data
+  ) => {
     if (!step1Data) return;
 
     try {
-      const validatedHome = providerHomeInfoValidator.parse(data);
-
-      //Step1 + Step2 to backend payload
       const payload: IProviderSignup = {
         first_name: step1Data.first_name,
         last_name: step1Data.last_name,
         email: step1Data.email,
         password: step1Data.password,
         confirmPassword: step1Data.confirm_password,
-        phone_number: validatedHome.adult_home_phone, 
+        phone_number: step1Data.phone_number,
         job_title: step1Data.job_title,
-        adult_home_name: validatedHome.adult_home_name,
-        adult_home_email: validatedHome.adult_home_email,
-        adult_home_phone: validatedHome.adult_home_phone,
-        adult_home_state: validatedHome.adult_home_state,
-        adult_home_city: validatedHome.adult_home_city,
-        adult_home_street: validatedHome.adult_home_street,
-        adult_home_zipcode: validatedHome.adult_home_zipcode,
-        adult_home_website: validatedHome.adult_home_website,
+
+        adult_home_name: data.adult_home_name,
+        adult_home_email: data.adult_home_email,
+        adult_home_phone: data.adult_home_phone,
+        adult_home_state: data.adult_home_state,
+        adult_home_city: data.adult_home_city,
+        adult_home_street: data.adult_home_street,
+        adult_home_zipcode: data.adult_home_zipcode,
+        adult_home_website: data.adult_home_website,
+        homeDescription: data.homeDescription,
       };
 
       await registerProvider(payload);
+
       toast.success("Provider account created successfully!");
       navigate("/login", { replace: true });
     } catch (error: any) {
-      toast.error(error?.errors?.[0]?.message || error?.message || "Something went wrong");
+      toast.error(error?.message || "Something went wrong");
     }
   };
+
+  /* ============================
+     ANIMATION
+  ============================ */
 
   const slideVariants = {
     initial: (direction: number) => ({
@@ -136,9 +152,8 @@ export const ProviderSignup: React.FC = () => {
         <div className="h-2 bg-gray-300 rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-gradient-to-r from-yellow-400 to-blue-500"
-            initial={{ width: "50%" }}
             animate={{ width: step === 1 ? "50%" : "100%" }}
-            transition={{ duration: 0.6, ease: "easeInOut" }}
+            transition={{ duration: 0.6 }}
           />
         </div>
         <p className="text-center text-sm mt-2 text-gray-600">
@@ -146,10 +161,11 @@ export const ProviderSignup: React.FC = () => {
         </p>
       </div>
 
-      {/* FORMS */}
+      {/* FORM CONTAINER */}
       <div className="relative mx-auto w-[90%] md:w-[80%] rounded-lg overflow-hidden min-h-[500px]">
         <AnimatePresence custom={direction} mode="wait">
-          {/* STEP 1 */}
+
+          {/* ================= STEP 1 ================= */}
           {step === 1 && (
             <motion.div
               key="step1"
@@ -158,10 +174,9 @@ export const ProviderSignup: React.FC = () => {
               initial="initial"
               animate="animate"
               exit="exit"
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+              transition={{ duration: 0.5 }}
               className="bg-gray-200 grid md:grid-cols-3 py-5 px-3 md:px-6 rounded-lg gap-4"
             >
-              {/* Description */}
               <div className="space-y-2">
                 <h5 className="text-blue-500 text-[18px] font-semibold">
                   Home Representative
@@ -171,83 +186,84 @@ export const ProviderSignup: React.FC = () => {
                 </p>
               </div>
 
-              {/* Form */}
               <div className="col-span-2 bg-white rounded p-4">
-                <form onSubmit={handleSubmit(handleRepSubmit)} className="space-y-4">
-                  {/* First + Last Name */}
+                <form
+                  onSubmit={handleSubmit(handleRepSubmit)}
+                  className="space-y-4"
+                >
                   <div className="grid md:grid-cols-2 gap-3">
                     <div className="flex flex-col">
-                      <label>First Name <sup className="text-rose-700">*</sup></label>
-                      <input
-                        {...register("first_name", { required: true })}
-                        className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      />
+                      <label>First Name *</label>
+                      <input {...register("first_name", { required: true })} className="border border-gray-400 rounded px-3 py-2" />
                       {errors.first_name && <ErrorValidation error="Required" />}
                     </div>
 
                     <div className="flex flex-col">
-                      <label>Last Name <sup className="text-rose-700">*</sup></label>
-                      <input
-                        {...register("last_name", { required: true })}
-                        className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      />
+                      <label>Last Name *</label>
+                      <input {...register("last_name", { required: true })} className="border border-gray-400 rounded px-3 py-2" />
                       {errors.last_name && <ErrorValidation error="Required" />}
                     </div>
                   </div>
 
-                  {/* Email + Password */}
                   <div className="grid md:grid-cols-2 gap-3">
                     <div className="flex flex-col">
-                      <label>Email <sup className="text-rose-700">*</sup></label>
-                      <input
-                        type="email"
-                        {...register("email", { required: true })}
-                        className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      />
+                      <label>Email *</label>
+                      <input type="email" {...register("email", { required: true })} className="border border-gray-400 rounded px-3 py-2" />
                       {errors.email && <ErrorValidation error="Required" />}
                     </div>
 
                     <div className="flex flex-col">
-                      <label>Password <sup className="text-rose-700">*</sup></label>
+                      <label>Phone Number *</label>
                       <input
-                        type="password"
-                        {...register("password", { required: true })}
-                        className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                        type="tel"
+                        {...register("phone_number", {
+                          required: true,
+                          onChange: (e) =>
+                            (e.target.value = formPhoneNumber(e.target.value)),
+                        })}
+                        className="border border-gray-400 rounded px-3 py-2"
                       />
-                      {errors.password && <ErrorValidation error="Required" />}
+                      {errors.phone_number && <ErrorValidation error="Required" />}
                     </div>
                   </div>
 
-                  {/* Confirm Password */}
-                  <div className="flex flex-col md:w-1/2">
-                    <label>Confirm Password <sup className="text-rose-700">*</sup></label>
-                    <input
-                      type="password"
-                      {...register("confirm_password", {
-                        required: true,
-                        validate: (val) => val === watch("password"),
-                      })}
-                      className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                    />
-                    {errors.confirm_password && <ErrorValidation error="Passwords must match" />}
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div className="flex flex-col">
+                      <label>Password *</label>
+                      <input type="password" {...register("password", { required: true })} className="border border-gray-400 rounded px-3 py-2" />
+                      {errors.password && <ErrorValidation error="Required" />}
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label>Confirm Password *</label>
+                      <input
+                        type="password"
+                        {...register("confirm_password", {
+                          required: true,
+                          validate: (val) =>
+                            val === watch("password") ||
+                            "Passwords must match",
+                        })}
+                        className="border border-gray-400 rounded px-3 py-2"
+                      />
+                      {errors.confirm_password && (
+                        <ErrorValidation error="Passwords must match" />
+                      )}
+                    </div>
                   </div>
 
-                  {/* Job Title */}
                   <div className="flex flex-col md:w-1/2">
-                    <label>Job Title <sup className="text-rose-700">*</sup></label>
-                    <input
-                      {...register("job_title", { required: true })}
-                      className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                    />
+                    <label>Job Title *</label>
+                    <input {...register("job_title", { required: true })} className="border border-gray-400 rounded px-3 py-2" />
                     {errors.job_title && <ErrorValidation error="Required" />}
                   </div>
 
-                  <hr />
-
-                  <div className="flex justify-between items-center pt-2">
+                  <div className="flex justify-between items-center pt-4">
                     <div>
                       Already have an account?{" "}
-                      <Link to="/login" className="text-blue-500 underline">Login</Link>
+                      <Link to="/login" className="text-blue-500 underline">
+                        Login
+                      </Link>
                     </div>
                     <Submitbutton value="Next" type="submit" disabled={!isValid} />
                   </div>
@@ -256,7 +272,7 @@ export const ProviderSignup: React.FC = () => {
             </motion.div>
           )}
 
-          {/* STEP 2 */}
+          {/* ================= STEP 2 ================= */}
           {step === 2 && (
             <motion.div
               key="step2"
@@ -265,122 +281,106 @@ export const ProviderSignup: React.FC = () => {
               initial="initial"
               animate="animate"
               exit="exit"
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+              transition={{ duration: 0.5 }}
               className="bg-gray-200 grid md:grid-cols-3 py-5 px-3 md:px-6 rounded-lg gap-4"
             >
-              {/* Description */}
               <div className="space-y-2">
-                <h5 className="text-blue-500 text-[18px] font-semibold">Home Information</h5>
-                <p className="text-sm text-gray-600">Enter your home/facility information</p>
+                <h5 className="text-blue-500 text-[18px] font-semibold">
+                  Home Information
+                </h5>
+                <p className="text-sm text-gray-600">
+                  Enter your home/facility information
+                </p>
               </div>
 
-              {/* Form */}
               <div className="col-span-2 bg-white rounded p-4">
                 <form onSubmit={handleSubmit2(handleHomeInfoSubmit)} className="space-y-4">
-                  {/* Home Name + Website */}
+
                   <div className="grid md:grid-cols-2 gap-3">
                     <div className="flex flex-col">
-                      <label>Home Name <sup className="text-rose-700">*</sup></label>
-                      <input
-                        {...register2("adult_home_name", { required: true })}
-                        className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      />
+                      <label>Home Name *</label>
+                      <input {...register2("adult_home_name", { required: true })} className="border border-gray-400 rounded px-3 py-2" />
                       {errors2.adult_home_name && <ErrorValidation error="Required" />}
                     </div>
 
                     <div className="flex flex-col">
                       <label>Website</label>
-                      <input
-                        placeholder="https://example.com"
-                        {...register2("adult_home_website")}
-                        className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      />
+                      <input {...register2("adult_home_website")} className="border border-gray-400 rounded px-3 py-2" />
                     </div>
                   </div>
 
-                  {/* Email + Phone */}
                   <div className="grid md:grid-cols-2 gap-3">
                     <div className="flex flex-col">
-                      <label>Work Email <sup className="text-rose-700">*</sup></label>
-                      <input
-                        type="email"
-                        {...register2("adult_home_email", { required: true })}
-                        className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      />
+                      <label>Work Email *</label>
+                      <input type="email" {...register2("adult_home_email", { required: true })} className="border border-gray-400 rounded px-3 py-2" />
                       {errors2.adult_home_email && <ErrorValidation error="Required" />}
                     </div>
 
                     <div className="flex flex-col">
-                      <label>Phone Number <sup className="text-rose-700">*</sup></label>
+                      <label>Phone *</label>
                       <input
                         type="tel"
-                        {...register2("adult_home_phone", { required: true })}
-                        onChange={handlePhoneNumberFormatting}
-                        value={phoneNumber}
-                        className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                        {...register2("adult_home_phone", {
+                          required: true,
+                          onChange: (e) =>
+                            (e.target.value = formPhoneNumber(e.target.value)),
+                        })}
+                        className="border border-gray-400 rounded px-3 py-2"
                       />
                       {errors2.adult_home_phone && <ErrorValidation error="Required" />}
                     </div>
                   </div>
 
-                  {/* State + City */}
                   <div className="grid md:grid-cols-2 gap-3">
                     <div className="flex flex-col">
-                      <label>State <sup className="text-rose-700">*</sup></label>
-                      <input
-                        {...register2("adult_home_state", { required: true })}
-                        className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      />
+                      <label>State *</label>
+                      <input {...register2("adult_home_state", { required: true })} className="border border-gray-400 rounded px-3 py-2" />
                       {errors2.adult_home_state && <ErrorValidation error="Required" />}
                     </div>
 
                     <div className="flex flex-col">
-                      <label>City <sup className="text-rose-700">*</sup></label>
-                      <input
-                        {...register2("adult_home_city", { required: true })}
-                        className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      />
+                      <label>City *</label>
+                      <input {...register2("adult_home_city", { required: true })} className="border border-gray-400 rounded px-3 py-2" />
                       {errors2.adult_home_city && <ErrorValidation error="Required" />}
                     </div>
                   </div>
 
-                  {/* Street + Zipcode */}
                   <div className="grid md:grid-cols-2 gap-3">
                     <div className="flex flex-col">
-                      <label>Street <sup className="text-rose-700">*</sup></label>
-                      <input
-                        {...register2("adult_home_street", { required: true })}
-                        className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      />
+                      <label>Street *</label>
+                      <input {...register2("adult_home_street", { required: true })} className="border border-gray-400 rounded px-3 py-2" />
                       {errors2.adult_home_street && <ErrorValidation error="Required" />}
                     </div>
 
                     <div className="flex flex-col">
-                      <label>Zipcode <sup className="text-rose-700">*</sup></label>
-                      <input
-                        {...register2("adult_home_zipcode", { required: true })}
-                        className="border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      />
+                      <label>Zipcode *</label>
+                      <input {...register2("adult_home_zipcode", { required: true })} className="border border-gray-400 rounded px-3 py-2" />
                       {errors2.adult_home_zipcode && <ErrorValidation error="Required" />}
                     </div>
                   </div>
 
-                  <hr />
+                  <div className="flex flex-col">
+                    <label>Home Description *</label>
+                    <textarea
+                      rows={4}
+                      {...register2("homeDescription", { required: true })}
+                      className="border border-gray-400 rounded px-3 py-2"
+                    />
+                    {errors2.homeDescription && <ErrorValidation error="Required" />}
+                  </div>
 
-                  <div className="flex justify-between items-center pt-2">
-                    <button
-                      type="button"
-                      className="text-blue-500 underline"
-                      onClick={() => setStep(1)}
-                    >
+                  <div className="flex justify-between items-center pt-4">
+                    <button type="button" className="text-blue-500 underline" onClick={() => setStep(1)}>
                       ← Back
                     </button>
                     <Submitbutton value="Create Account" type="submit" disabled={!isValid2} />
                   </div>
+
                 </form>
               </div>
             </motion.div>
           )}
+
         </AnimatePresence>
       </div>
     </div>

@@ -73,7 +73,7 @@ export const LoginPage = () => {
       if (role === "CAREGIVER") navigate("/caregiver/dashboard");
       else if (role === "HOMEREPRESENTATIVE")
         navigate("/provider/dashboard");
-      else if (role === "ADMIN") navigate("/admin/dashboard");
+      else if (role === "ADMIN") navigate("/admin");
       else navigate("/");
     } catch (error: any) {
       toast.error(error.message || "Login failed");

@@ -2,9 +2,19 @@ import { NavLink } from "react-router-dom";
 import { Home, Users, CreditCard, Settings, LogOut, Menu, X, BarChart2, Building, FileCheck, Briefcase } from "lucide-react";
 import logo from "../../assets/images/logo.png";
 import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 
 export default function AdminNavbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // handled by auth context
+    }
+  };
 
   const navItemClasses = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 px-4 py-2 rounded-md text-white transition-all ${
@@ -36,7 +46,7 @@ export default function AdminNavbar() {
       <NavLink to="/admin/reports" className={navItemClasses} onClick={() => setIsOpen(false)}>
         <BarChart2 size={20} /> Reports
       </NavLink>
-      <NavLink to="/settings" className={navItemClasses} onClick={() => setIsOpen(false)}>
+      <NavLink to="/admin/settings" className={navItemClasses} onClick={() => setIsOpen(false)}>
         <Settings size={20} /> Settings
       </NavLink>
     </>
@@ -68,8 +78,10 @@ export default function AdminNavbar() {
 
         {/* Log Out */}
         <div className="px-4 pb-6">
-          <button 
-          className="flex items-center gap-3 text-blue-400 hover:text-white px-4 py-2 rounded-md hover:bg-gray-800 w-full transition-all">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 text-blue-400 hover:text-white px-4 py-2 rounded-md hover:bg-gray-800 w-full transition-all"
+          >
             <LogOut size={20} /> Log Out
           </button>
         </div>

@@ -3,6 +3,7 @@ import type { ICaregiverSignup } from "../Interfaces/ICaregiverSignUp";
 import type { IProviderSignup } from "../Interfaces/IProviderSignUp";
 import type { ILogin } from "../validation/signupValidation";
 import type { ICareRequirements } from "../Interfaces/ICareRequirements";
+import type { IApplyJob, ICreateJob, IJob, IJobApplication, IJobList } from "../Interfaces/IJobs";
 
 // CENTRALIZED ERROR HANDLER
 const handleError = (error: any) => {
@@ -35,10 +36,11 @@ export const registerProvider = async (data: IProviderSignup) => {
     const response = await api.post("/auth/register/provider", data);
     return response.data;
   } catch (error: any) {
-    handleError(error);
+    console.log("FULL ERROR:", error.response?.data);
+    console.log("STATUS:", error.response?.status);
+    throw error;
   }
 };
-
 // ---------------------------------------------------------
 // LOGIN USER
 // ---------------------------------------------------------
@@ -138,5 +140,237 @@ export const uploadCaregiverRequirements = async (
     return response.data;
   } catch (error: any) {
     handleError(error);
+  }
+};
+
+
+// ---------------------------------------------------------
+// CREATE JOB
+// ---------------------------------------------------------
+
+export const createJob = async (data: ICreateJob) => {
+  try {
+    const response = await api.post("/jobs", data);
+    return response.data;
+  } catch (error: any) {
+    console.log("CREATE JOB ERROR:", JSON.stringify(error.response?.data, null, 2));
+    console.log("STATUS:", error.response?.status);
+    console.log("PAYLOAD SENT:", JSON.stringify(data, null, 2));
+    throw error;
+  }
+};
+
+
+// ---------------------------------------------------------
+// Get Jobs By Home ID
+// ---------------------------------------------------------
+
+
+export const getJobsByHome = async (adultHomeId: string): Promise<IJobList> => {
+  try {
+    const response = await api.get("/jobs/home", { params: { homeId: adultHomeId } });
+    return response.data;
+  } catch (error: any) {
+    console.log("GET JOBS BY HOME ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+
+// ---------------------------------------------------------
+// Get Single Job by ID
+// ---------------------------------------------------------
+
+export const getJobById = async (jobId: string): Promise<IJob> => {
+  try {
+    const response = await api.get(`/jobs/${jobId}`);
+    return response.data;
+  } catch (error: any) {
+    console.log("GET JOB BY ID ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+
+
+
+// ---------------------------------------------------------
+// Update Is Filled
+// ---------------------------------------------------------
+
+
+
+export const updateJobIsFilled = async (
+  jobId: string,
+  homeId: string,
+  isJobFilled: boolean
+): Promise<void> => {
+  try {
+    await api.patch("/jobs/update/isFilled", { isJobFilled }, { params: { jobId, homeId } });
+  } catch (error: any) {
+    console.log("UPDATE IS FILLED ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+
+// ---------------------------------------------------------
+//Update a Job
+// ---------------------------------------------------------
+
+
+
+
+
+export const updateJob = async (
+  jobId: string,
+  homeId: string,
+  data: Partial<ICreateJob>
+): Promise<IJob> => {
+  try {
+    const response = await api.patch("/jobs/update", data, {
+      params: { jobId, homeId },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.log("UPDATE JOB ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+
+
+// ---------------------------------------------------------
+//Delete a job
+// ---------------------------------------------------------
+
+export const deleteJob = async (jobId: string): Promise<void> => {
+  try {
+    const response = await api.delete("/jobs", { params: { jobId } });
+    console.log("DELETE JOB SUCCESS:", response.status, JSON.stringify(response.data, null, 2));
+  } catch (error: any) {
+    console.log("DELETE JOB ERROR status:", error.response?.status);
+    console.log("DELETE JOB ERROR body:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+// ---------------------------------------------------------
+//Get all Jobs
+// ---------------------------------------------------------
+
+export const getAllJobs = async (): Promise<IJobList> => {
+  try {
+    const response = await api.get("/jobs");
+    return response.data;
+  } catch (error: any) {
+    console.log("GET ALL JOBS ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+
+// ---------------------------------------------------------
+//Apply for a Job
+// ---------------------------------------------------------
+
+export const applyForJob = async (data: IApplyJob): Promise<IJobApplication> => {
+  try {
+    const response = await api.post("/jobs/application", data);
+    return response.data;
+  } catch (error: any) {
+    console.log("APPLY JOB ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+// ---------------------------------------------------------
+// Get Application by ID
+// ---------------------------------------------------------
+
+
+export const getApplicationById = async (applicationId: string): Promise<IJobApplication> => {
+  try {
+    const response = await api.get(`/jobs/application/${applicationId}`);
+    return response.data;
+  } catch (error: any) {
+    console.log("GET APPLICATION ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+
+
+
+// ─── Get All Applications by Job (GET /jobs/application/job?jobId=xxx) ─────────
+export const getApplicationsByJob = async (jobId: string): Promise<IJobApplication[]> => {
+  try {
+    const response = await api.get("/jobs/application/job", { params: { jobId } });
+    return response.data;
+  } catch (error: any) {
+    console.log("GET APPLICATIONS BY JOB ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+// ─── Get All Applications by Caregiver (GET /jobs/application/caregiver?caregiverId=xxx) ──
+export const getApplicationsByCaregiver = async (caregiverId: string): Promise<IJobApplication[]> => {
+  try {
+    const response = await api.get("/jobs/application/caregiver", { params: { caregiverId } });
+    return response.data;
+  } catch (error: any) {
+    console.log("GET APPLICATIONS BY CAREGIVER ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+// ─── Accept Application (PATCH /jobs/application/accept) ─────────────────────
+export const acceptApplication = async (
+  applicationId: string,
+  homeId: string,
+  caregiverId: string
+): Promise<IJobApplication> => {
+  try {
+    const response = await api.patch("/jobs/application/accept", {
+      applicationId,
+      homeId,
+      caregiverId,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.log("ACCEPT APPLICATION ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+// ─── Reject Application (PATCH /jobs/application/reject) ─────────────────────
+export const rejectApplication = async (
+  applicationId: string,
+  homeId: string,
+  caregiverId: string
+): Promise<IJobApplication> => {
+  try {
+    const response = await api.patch("/jobs/application/reject", {
+      applicationId,
+      homeId,
+      caregiverId,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.log("REJECT APPLICATION ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
+  }
+};
+
+// ─── Get Caregiver by ID (GET /caregiver/:id) ────────────────────────────────
+// Add this to your existing authService.ts file
+
+export const getCaregiverById = async (caregiverId: string) => {
+  try {
+    const response = await api.get(`/caregiver/${caregiverId}`);
+    return response.data;
+  } catch (error: any) {
+    console.log("GET CAREGIVER BY ID ERROR:", JSON.stringify(error.response?.data, null, 2));
+    throw error;
   }
 };

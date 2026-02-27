@@ -19,6 +19,8 @@ interface AuthContextType {
     refreshToken: string
   ) => void;
 
+  updateUserProfile: (profileData: any) => void;
+
   logout: () => Promise<void>;
 }
 
@@ -35,7 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   /*
   -------------------------------------------------
-  Save Auth Data (Login Flow)
+  Save Auth Data
   -------------------------------------------------
   */
 
@@ -49,6 +51,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
+  };
+
+  /*
+  -------------------------------------------------
+  Update User Profile (NEW)
+  -------------------------------------------------
+  */
+
+  const updateUserProfile = (profileData: any) => {
+    if (!user) return;
+
+    const updatedUser = {
+      ...user,
+      profile: {
+        ...user.profile,
+        ...profileData,
+      },
+    };
+
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
   };
 
   /*
@@ -116,6 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         loading,
         setAuthData,
+        updateUserProfile, 
         logout,
       }}
     >
