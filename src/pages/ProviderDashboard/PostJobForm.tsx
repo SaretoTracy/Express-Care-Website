@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import type { ICreateJob } from "../../Interfaces/IJobs";
@@ -34,9 +33,10 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
     certificates_needed: [],
     is_urgent: false,
     adult_home_id: adultHomeId,
+    job_description: "",
   });
 
-  // Syncs adult_home_id once the user session is restored asynchronously
+  // Syncs adult_home_id once user session is restored asynchronously
   useEffect(() => {
     if (adultHomeId) {
       setForm((prev) => ({ ...prev, adult_home_id: adultHomeId }));
@@ -44,10 +44,14 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
   }, [adultHomeId]);
 
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value, type } = e.target;
     setForm((prev) => ({
       ...prev,
@@ -76,6 +80,8 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
 
     if (!form.job_role.trim())
       return setError("Job role is required");
+    if (!form.job_description.trim())
+      return setError("Job description is required");
     if (!form.start_date || !form.end_date)
       return setError("Start and end dates are required");
     if (form.start_date > form.end_date)
@@ -85,13 +91,15 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
     if (!form.payment_rate || isNaN(Number(form.payment_rate)))
       return setError("Valid payment rate is required");
     if (!adultHomeId)
-      return setError("Your account is not linked to a facility. Please contact support.");
+      return setError(
+        "Your account is not linked to a facility. Please contact support."
+      );
 
     setLoading(true);
     try {
       const payload: ICreateJob = {
         ...form,
-        payment_rate: parseFloat(form.payment_rate).toFixed(2), // ensures "150.00" format
+        payment_rate: parseFloat(form.payment_rate).toFixed(2),
         staff_needed: Number(form.staff_needed),
         adult_home_id: adultHomeId,
       };
@@ -101,7 +109,6 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
       setTimeout(() => navigate("/provider/dashboard"), 1500);
       onSuccess?.();
 
-      // Reset form but keep adult_home_id
       setForm({
         job_role: "",
         job_type: "FULL_TIME",
@@ -114,10 +121,15 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
         certificates_needed: [],
         is_urgent: false,
         adult_home_id: adultHomeId,
+        job_description: "",
       });
     } catch (err: any) {
       const msg = err.response?.data?.message;
-      setError(Array.isArray(msg) ? msg[0] : msg || "Failed to post job. Please try again.");
+      setError(
+        Array.isArray(msg)
+          ? msg[0]
+          : msg || "Failed to post job. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -126,15 +138,17 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
   const inputCls =
     "w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 text-sm focus:outline-none focus:border-[#557a95] transition-colors";
 
-  // Guard: user loaded but has no facility linked
   if (user && !adultHomeId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#1a2a3a] via-[#2c4a6a] to-[#1a2a3a] flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl shadow-2xl p-10 max-w-md w-full text-center">
           <div className="text-5xl mb-4">⚠️</div>
-          <h2 className="text-lg font-bold text-gray-800 mb-2">Facility Not Linked</h2>
+          <h2 className="text-lg font-bold text-gray-800 mb-2">
+            Facility Not Linked
+          </h2>
           <p className="text-sm text-gray-500">
-            Your account is not linked to a facility. Please contact support to resolve this.
+            Your account is not linked to a facility. Please contact support
+            to resolve this.
           </p>
         </div>
       </div>
@@ -151,8 +165,12 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
           <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-[#e68a1f]/20" />
           <div className="relative z-10 flex items-center justify-between">
             <div>
-              <h1 className="text-white text-2xl font-bold tracking-tight">Post a Job</h1>
-              <p className="text-white/70 text-sm mt-1">Find the right staff for your facility</p>
+              <h1 className="text-white text-2xl font-bold tracking-tight">
+                Post a Job
+              </h1>
+              <p className="text-white/70 text-sm mt-1">
+                Find the right staff for your facility
+              </p>
             </div>
             {form.is_urgent && (
               <span className="bg-[#e68a1f] text-white text-xs font-bold px-3 py-1.5 rounded-full animate-pulse">
@@ -187,12 +205,33 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
               <label className="text-sm font-semibold text-gray-700">
                 Job Type <span className="text-[#e68a1f]">*</span>
               </label>
-              <select name="job_type" value={form.job_type} onChange={handleChange} className={inputCls}>
+              <select
+                name="job_type"
+                value={form.job_type}
+                onChange={handleChange}
+                className={inputCls}
+              >
                 <option value="FULL_TIME">Full Time</option>
                 <option value="PART_TIME">Part Time</option>
                 <option value="CONTRACT">Contract</option>
               </select>
             </div>
+          </div>
+
+          {/* Job Description */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-semibold text-gray-700">
+              Job Description <span className="text-[#e68a1f]">*</span>
+            </label>
+            <textarea
+              name="job_description"
+              value={form.job_description}
+              onChange={handleChange}
+              placeholder="Describe the role, responsibilities, and requirements..."
+              rows={4}
+              required
+              className={`${inputCls} resize-none`}
+            />
           </div>
 
           {/* Start + End Date */}
@@ -201,14 +240,28 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
               <label className="text-sm font-semibold text-gray-700">
                 Start Date <span className="text-[#e68a1f]">*</span>
               </label>
-              <input type="date" name="start_date" value={form.start_date} onChange={handleChange} required className={inputCls} />
+              <input
+                type="date"
+                name="start_date"
+                value={form.start_date}
+                onChange={handleChange}
+                required
+                className={inputCls}
+              />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-semibold text-gray-700">
                 End Date <span className="text-[#e68a1f]">*</span>
               </label>
-              <input type="date" name="end_date" value={form.end_date} onChange={handleChange} required className={inputCls} />
+              <input
+                type="date"
+                name="end_date"
+                value={form.end_date}
+                onChange={handleChange}
+                required
+                className={inputCls}
+              />
             </div>
           </div>
 
@@ -218,14 +271,28 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
               <label className="text-sm font-semibold text-gray-700">
                 Shift Start <span className="text-[#e68a1f]">*</span>
               </label>
-              <input type="time" name="shift_start" value={form.shift_start} onChange={handleChange} required className={inputCls} />
+              <input
+                type="time"
+                name="shift_start"
+                value={form.shift_start}
+                onChange={handleChange}
+                required
+                className={inputCls}
+              />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-semibold text-gray-700">
                 Shift End <span className="text-[#e68a1f]">*</span>
               </label>
-              <input type="time" name="shift_end" value={form.shift_end} onChange={handleChange} required className={inputCls} />
+              <input
+                type="time"
+                name="shift_end"
+                value={form.shift_end}
+                onChange={handleChange}
+                required
+                className={inputCls}
+              />
             </div>
           </div>
 
@@ -236,7 +303,9 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
                 Payment Rate ($/hr) <span className="text-[#e68a1f]">*</span>
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm pointer-events-none">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm pointer-events-none">
+                  $
+                </span>
                 <input
                   type="number"
                   name="payment_rate"
@@ -270,7 +339,9 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
 
           {/* Certificates */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700">Certificates Required</label>
+            <label className="text-sm font-semibold text-gray-700">
+              Certificates Required
+            </label>
             <div className="flex flex-wrap gap-2">
               {CERTIFICATE_OPTIONS.map((cert) => {
                 const selected = form.certificates_needed.includes(cert);
@@ -280,9 +351,10 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
                     type="button"
                     onClick={() => handleCertToggle(cert)}
                     className={`px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all duration-150 cursor-pointer
-                      ${selected
-                        ? "bg-[#557a95] border-[#557a95] text-white shadow-md"
-                        : "bg-gray-100 border-gray-200 text-gray-600 hover:border-[#557a95] hover:text-[#557a95]"
+                      ${
+                        selected
+                          ? "bg-[#557a95] border-[#557a95] text-white shadow-md"
+                          : "bg-gray-100 border-gray-200 text-gray-600 hover:border-[#557a95] hover:text-[#557a95]"
                       }`}
                   >
                     {selected && <span className="mr-1">✓</span>}
@@ -297,7 +369,9 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
           <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border-2 border-gray-200">
             <button
               type="button"
-              onClick={() => setForm((p) => ({ ...p, is_urgent: !p.is_urgent }))}
+              onClick={() =>
+                setForm((p) => ({ ...p, is_urgent: !p.is_urgent }))
+              }
               className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none flex-shrink-0
                 ${form.is_urgent ? "bg-[#e68a1f]" : "bg-gray-300"}`}
             >
@@ -307,8 +381,12 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
               />
             </button>
             <div>
-              <p className="text-sm font-semibold text-gray-700">Mark as Urgent</p>
-              <p className="text-xs text-gray-400">This job will be highlighted to available staff</p>
+              <p className="text-sm font-semibold text-gray-700">
+                Mark as Urgent
+              </p>
+              <p className="text-xs text-gray-400">
+                This job will be highlighted to available staff
+              </p>
             </div>
           </div>
 
@@ -333,16 +411,32 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
             type="submit"
             disabled={loading}
             className={`mt-1 py-3.5 rounded-xl text-white font-bold text-base tracking-wide transition-all duration-200
-              ${loading
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-gradient-to-r from-[#e68a1f] to-[#f0a84a] hover:from-[#d47d1a] hover:to-[#e68a1f] shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+              ${
+                loading
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-gradient-to-r from-[#e68a1f] to-[#f0a84a] hover:from-[#d47d1a] hover:to-[#e68a1f] shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
               }`}
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                <svg
+                  className="animate-spin h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  />
                 </svg>
                 Posting Job...
               </span>
@@ -350,7 +444,6 @@ export default function PostJobForm({ onSuccess }: PostJobFormProps) {
               "Post Job →"
             )}
           </button>
-
         </form>
       </div>
     </div>

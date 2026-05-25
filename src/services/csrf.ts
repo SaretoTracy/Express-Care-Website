@@ -3,7 +3,7 @@ import axios from "axios";
 const CSRF_TOKEN_PATH = "/api/auth/csrf-token";
 
 const csrfClient = axios.create({
-  baseURL: "/",
+  baseURL: "https://api.expresscareteam.com",
   withCredentials: true,
 });
 

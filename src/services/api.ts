@@ -34,10 +34,9 @@ https://api.expresscareteam.com/api/...
 */
 
 export const api = axios.create({
-  baseURL: "/",        // ← was "/api", changed to "/"
+  baseURL: "https://api.expresscareteam.com",
   withCredentials: true,
 });
-
 /*
 -------------------------------------------------
 REQUEST INTERCEPTOR

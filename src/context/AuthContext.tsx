@@ -4,6 +4,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useCallback,
 } from "react";
 import toast from "react-hot-toast";
 import { getCurrentUser, logoutUser } from "../services/authService";
@@ -13,15 +14,12 @@ import { clearCsrfToken } from "../services/csrf";
 interface AuthContextType {
   user: any;
   loading: boolean;
-
   setAuthData: (
     user: any,
     accessToken: string,
     refreshToken: string
   ) => void;
-
   updateUserProfile: (profileData: any) => void;
-
   logout: () => Promise<void>;
 }
 
@@ -29,7 +27,23 @@ const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+const AUTH_STORAGE_KEYS = [
+  "user",
+  "accessToken",
+  "refreshToken",
+] as const;
+
+const clearAuthStorage = () => {
+  AUTH_STORAGE_KEYS.forEach((key) =>
+    localStorage.removeItem(key)
+  );
+};
+
+export const AuthProvider = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
   const [user, setUser] = useState<any>(
     JSON.parse(localStorage.getItem("user") || "null")
   );
@@ -42,55 +56,63 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   -------------------------------------------------
   */
 
-  const setAuthData = (
-    userData: any,
-    accessToken: string,
-    refreshToken: string
-  ) => {
-    setUser(userData);
-
-    localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
-  };
+  const setAuthData = useCallback(
+    (
+      userData: any,
+      accessToken: string,
+      refreshToken: string
+    ) => {
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+    },
+    []
+  );
 
   /*
   -------------------------------------------------
-  Update User Profile (NEW)
+  Update User Profile
   -------------------------------------------------
   */
 
-  const updateUserProfile = (profileData: any) => {
-    if (!user) return;
-
-    const updatedUser = {
-      ...user,
-      profile: {
-        ...user.profile,
-        ...profileData,
-      },
-    };
-
-    setUser(updatedUser);
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-  };
+  const updateUserProfile = useCallback(
+    (profileData: any) => {
+      setUser((prev: any) => {
+        if (!prev) return prev;
+        const updatedUser = {
+          ...prev,
+          profile: {
+            ...prev.profile,
+            ...profileData,
+          },
+        };
+        localStorage.setItem(
+          "user",
+          JSON.stringify(updatedUser)
+        );
+        return updatedUser;
+      });
+    },
+    []
+  );
 
   /*
   -------------------------------------------------
   Logout Logic
+  CSRF token is attached automatically by api.ts
+  interceptor — no manual handling needed here.
+  clearCsrfToken() wipes the cached token + cookie
+  so the next login gets a fresh pair.
   -------------------------------------------------
   */
 
-  const AUTH_STORAGE_KEYS = ["user", "accessToken", "refreshToken"] as const;
-
-  const clearAuthStorage = () => {
-    AUTH_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
-  };
-
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await logoutUser();
     } catch (err) {
+      // Always complete logout locally even if API fails
+      // (e.g. token already expired, server unreachable)
       console.error("Logout API failed:", err);
     } finally {
       clearAuthStorage();
@@ -99,19 +121,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       toast.success("Logged out");
       window.location.href = "/login";
     }
-  };
+  }, []);
 
   /*
   -------------------------------------------------
   Session Restore
+  getCurrentUser reads from localStorage — no
+  network call since /auth/me doesn't exist
   -------------------------------------------------
   */
 
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const user = await getCurrentUser();
-        setUser(user);
+        const storedUser = await getCurrentUser();
+        setUser(storedUser);
       } catch {
         setUser(null);
       } finally {
@@ -125,6 +149,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   /*
   -------------------------------------------------
   Global Auth Expiry Listener
+  useCallback on logout ensures this effect has
+  a stable reference and doesn't re-register
+  the event listener on every render
   -------------------------------------------------
   */
 
@@ -136,8 +163,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     window.addEventListener(AuthEvents.EXPIRED, handleExpire);
 
     return () =>
-      window.removeEventListener(AuthEvents.EXPIRED, handleExpire);
-  }, []);
+      window.removeEventListener(
+        AuthEvents.EXPIRED,
+        handleExpire
+      );
+  }, [logout]);
 
   return (
     <AuthContext.Provider
