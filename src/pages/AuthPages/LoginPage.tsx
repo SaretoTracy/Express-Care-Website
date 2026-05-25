@@ -11,8 +11,8 @@ import { AuthCard, AuthInput, AuthButton } from "../../UI/AuthCard";
 import { useAuth } from "../../context/AuthContext";
 
 const LoginSchema = z.object({
-  username: z.string().min(1, "Invalid email address"),
-  password: z.string().min(1, "Password is required"),
+  username: z.string().email("Enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type LoginType = z.infer<typeof LoginSchema>;

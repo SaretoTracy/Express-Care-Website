@@ -1,18 +1,21 @@
 import axios, {
   type AxiosError,
-  type AxiosRequestConfig,
   type InternalAxiosRequestConfig,
 } from "axios";
+
 import { emitAuthExpired } from "../utils/authEventBus";
 
-const API_BASE_URL = "https://api.expresscareteam.com/api";
+import {
+  fetchCsrfToken,
+  clearCsrfToken,
+} from "./csrf";
 
-// Extend Axios config to track whether we've already retried a request
-interface RetriableRequestConfig extends InternalAxiosRequestConfig {
+interface RetriableRequestConfig
+  extends InternalAxiosRequestConfig {
   _retry?: boolean;
+  _csrfRetry?: boolean;
 }
 
-// Simple queue entry type for requests waiting on a token refresh
 type RefreshQueueEntry = {
   resolve: (token: string) => void;
   reject: (reason?: unknown) => void;
@@ -21,32 +24,61 @@ type RefreshQueueEntry = {
 let isRefreshing = false;
 let refreshQueue: RefreshQueueEntry[] = [];
 
-// Single Axios instance used across the app
+/*
+-------------------------------------------------
+MAIN AXIOS INSTANCE
+baseURL is "/" so the Vite proxy path "/api" is
+preserved and forwarded to:
+https://api.expresscareteam.com/api/...
+-------------------------------------------------
+*/
+
 export const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: "/",        // ← was "/api", changed to "/"
   withCredentials: true,
 });
 
 /*
 -------------------------------------------------
-Request Interceptor
-- Attaches Authorization header from localStorage
+REQUEST INTERCEPTOR
+- Adds Authorization
+- Adds CSRF token to mutating requests
 -------------------------------------------------
 */
 
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = localStorage.getItem("accessToken");
+const MUTATING_METHODS = new Set([
+  "post",
+  "put",
+  "patch",
+  "delete",
+]);
 
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  async (config: InternalAxiosRequestConfig) => {
+    const accessToken = localStorage.getItem("accessToken");
+
+    if (accessToken && config.headers) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    const method = config.method?.toLowerCase();
+
+    if (
+      method &&
+      MUTATING_METHODS.has(method) &&
+      config.headers
+    ) {
+      const csrfToken = await fetchCsrfToken();
+      config.headers["X-CSRF-Token"] = csrfToken;
+    }
+
+    return config;
   }
-
-  return config;
-});
+);
 
 /*
 -------------------------------------------------
-Refresh Queue Executor
+HELPER: Resolve queued refresh requests
 -------------------------------------------------
 */
 
@@ -64,77 +96,143 @@ const processQueue = (token: string | null) => {
 
 /*
 -------------------------------------------------
-Response Interceptor (401 + Refresh Logic)
+RESPONSE INTERCEPTOR
+Handles:
+- CSRF retry
+- 401 refresh token flow
 -------------------------------------------------
 */
 
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as RetriableRequestConfig | undefined;
 
-    // If we don't have a request config or status isn't 401, just fail as usual
-    if (!originalRequest || error.response?.status !== 401) {
+  async (error: AxiosError) => {
+    const originalRequest =
+      error.config as RetriableRequestConfig;
+
+    const status = error.response?.status;
+
+    const errorMessage = String(
+      (error.response?.data as any)?.message ??
+        (error.response?.data as any)?.error ??
+        (error.response?.data as any)?.errorMsg ??
+        ""
+    ).toLowerCase();
+
+    /*
+    -------------------------------------------------
+    CSRF TOKEN EXPIRED / INVALID
+    -------------------------------------------------
+    */
+
+    if (
+      originalRequest &&
+      status === 403 &&
+      errorMessage.includes("csrf") &&
+      !originalRequest._csrfRetry
+    ) {
+      originalRequest._csrfRetry = true;
+
+      try {
+        clearCsrfToken();
+
+        const newCsrfToken = await fetchCsrfToken();
+
+        if (!originalRequest.headers) {
+          originalRequest.headers = {};
+        }
+
+        originalRequest.headers["X-CSRF-Token"] = newCsrfToken;
+
+        return api(originalRequest);
+      } catch (csrfError) {
+        return Promise.reject(csrfError);
+      }
+    }
+
+    /*
+    -------------------------------------------------
+    NON-401 ERRORS
+    -------------------------------------------------
+    */
+
+    if (!originalRequest || status !== 401) {
       return Promise.reject(error);
     }
 
-    // If we've already retried once, give up and emit global auth-expired
+    /*
+    -------------------------------------------------
+    ALREADY RETRIED
+    -------------------------------------------------
+    */
+
     if (originalRequest._retry) {
       emitAuthExpired();
       return Promise.reject(error);
     }
 
-    // If a refresh is already in progress, queue this request
+    /*
+    -------------------------------------------------
+    TOKEN REFRESH ALREADY RUNNING
+    -------------------------------------------------
+    */
+
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         refreshQueue.push({ resolve, reject });
       }).then((token: string) => {
-        // Once we have a new token, retry this request with updated header
         if (!originalRequest.headers) {
           originalRequest.headers = {};
         }
+
         originalRequest.headers.Authorization = `Bearer ${token}`;
+
         return api(originalRequest);
       });
     }
 
-    // Mark this request as having been retried and start a refresh
+    /*
+    -------------------------------------------------
+    START TOKEN REFRESH
+    -------------------------------------------------
+    */
+
     originalRequest._retry = true;
     isRefreshing = true;
 
     try {
       const refreshToken = localStorage.getItem("refreshToken");
+
       if (!refreshToken) {
         throw new Error("No refresh token available");
       }
 
       const response = await axios.post(
-        `${API_BASE_URL}/auth/refreshAccessToken`,
+        "/api/auth/refreshAccessToken",
         { refreshToken },
         { withCredentials: true }
       );
 
-      const newAccessToken = response.data?.accessToken as string;
+      const newAccessToken = response.data?.accessToken;
+
       if (!newAccessToken) {
-        throw new Error("No access token returned from refresh endpoint");
+        throw new Error("No access token returned");
       }
 
-      // Persist new access token
       localStorage.setItem("accessToken", newAccessToken);
 
-      // Resolve all queued requests with the new token
       processQueue(newAccessToken);
 
-      // Retry the original request with updated Authorization header
       if (!originalRequest.headers) {
         originalRequest.headers = {};
       }
+
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
       return api(originalRequest);
     } catch (refreshError) {
-      // Make sure all waiting requests fail and global auth-expired is fired
       processQueue(null);
+      clearCsrfToken();
       emitAuthExpired();
       return Promise.reject(refreshError);
     } finally {

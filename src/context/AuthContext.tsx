@@ -8,6 +8,7 @@ import {
 import toast from "react-hot-toast";
 import { getCurrentUser, logoutUser } from "../services/authService";
 import { AuthEvents } from "../utils/authEventBus";
+import { clearCsrfToken } from "../services/csrf";
 
 interface AuthContextType {
   user: any;
@@ -93,6 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Logout API failed:", err);
     } finally {
       clearAuthStorage();
+      clearCsrfToken();
       setUser(null);
       toast.success("Logged out");
       window.location.href = "/login";
