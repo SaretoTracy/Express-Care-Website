@@ -38,52 +38,49 @@ export const LoginPage = () => {
 
       const response = await loginUser(data);
 
+    
+      console.log("[Login] full response:", JSON.stringify(response, null, 2));
+
       const role =
         response.roles?.[0]?.name?.toUpperCase() || "CAREGIVER";
 
-      let profile = null;
-
-      if (role === "CAREGIVER" && response.caregiver) {
-        profile = response.caregiver;
-      }
-
-      if (
-        role === "HOMEREPRESENTATIVE" &&
-        response.adultHomeRepresentative
-      ) {
-        profile = response.adultHomeRepresentative;
-      }
-
       const normalizedUser = {
-        id: response.id,
-        username: response.username,
+   
+        ...response,
+       
+        accessToken: undefined,
+        refreshToken: undefined,
+     
         role,
-        profile,
+        profile:
+          role === "CAREGIVER"
+            ? response.caregiver ?? null
+            : response.adultHomeRepresentative ?? null,
       };
 
-      // 🔥 Use context instead of localStorage directly
       setAuthData(
         normalizedUser,
         response.accessToken,
-        response.refreshToken || ""
+        response.refreshToken ?? ""
       );
 
       toast.success("Login successful!");
 
       if (role === "CAREGIVER") navigate("/caregiver/dashboard");
-      else if (role === "HOMEREPRESENTATIVE")
-        navigate("/provider/dashboard");
+      else if (role === "HOMEREPRESENTATIVE") navigate("/provider/dashboard");
       else if (role === "ADMIN") navigate("/admin");
       else navigate("/");
     } catch (error: any) {
-      toast.error(error.message || "Login failed");
+      console.error("[Login] error:", error);
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Login failed. Please try again.";
+      toast.error(Array.isArray(msg) ? msg[0] : msg);
     } finally {
       setLoading(false);
     }
   };
-
-  const togglePasswordVisibility = () =>
-    setShowPassword(!showPassword);
 
   return (
     <AuthCard title="Sign In" logo={logo}>
@@ -97,7 +94,6 @@ export const LoginPage = () => {
           register={register}
           error={errors.username?.message}
         />
-
         <AuthInput
           label="Password"
           type={showPassword ? "text" : "password"}
@@ -106,12 +102,9 @@ export const LoginPage = () => {
           icon={<Lock size={18} />}
           register={register}
           error={errors.password?.message}
-          rightIcon={
-            showPassword ? <EyeOff size={18} /> : <Eye size={18} />
-          }
-          onRightIconClick={togglePasswordVisibility}
+          rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          onRightIconClick={() => setShowPassword((p) => !p)}
         />
-
         <AuthButton loading={loading} loadingText="Signing in...">
           <LogIn size={18} className="mr-2" />
           Sign in

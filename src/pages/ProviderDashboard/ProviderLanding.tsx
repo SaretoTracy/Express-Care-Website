@@ -16,8 +16,10 @@ import {
   Phone,
   MapPin,
   User,
-  Calendar,
   ChevronRight,
+  Building2,
+  Sparkles,
+  FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -33,9 +35,16 @@ import {
   rejectApplication,
   getCaregiverById,
 } from "../../services/authService";
-import { ModalHeader, ErrorBanner, SpinnerIcon, JobCardHeader, InfoRow, CertificateBadges, SkeletonCard } from "../../UI/Ui";
+import {
+  ModalHeader,
+  ErrorBanner,
+  SpinnerIcon,
+  JobCardHeader,
+  InfoRow,
+  CertificateBadges,
+  SkeletonCard,
+} from "../../UI/Ui";
 import { formatDate, formatJobType, formatTime } from "../../utils/Jobutils";
-
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ICaregiverDetail {
@@ -61,8 +70,8 @@ const getJobStatus = (job: IJob): "Active" | "Filled" | "Urgent" => {
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
   ACCEPTED: { label: "Accepted", cls: "bg-green-100 text-green-700 border-green-200" },
-  REJECTED: { label: "Rejected", cls: "bg-red-100  text-red-600  border-red-200"   },
-  PENDING:  { label: "Pending",  cls: "bg-blue-100 text-blue-700 border-blue-200"  },
+  REJECTED: { label: "Rejected", cls: "bg-red-100  text-red-600  border-red-200" },
+  PENDING:  { label: "Pending",  cls: "bg-blue-100 text-blue-700 border-blue-200" },
 };
 
 const CERTIFICATE_OPTIONS = [
@@ -75,7 +84,59 @@ const FILTERS = {
   employmentType: ["FULL_TIME", "PART_TIME", "CONTRACT"],
 };
 
-// ─── Shared detail-row used inside CaregiverDetailModal ───────────────────────
+const INPUT_CLS =
+  "w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 text-sm focus:outline-none focus:border-[#557a95] transition-colors";
+
+// ─── Greeting Header ──────────────────────────────────────────────────────────
+const GreetingHeader: React.FC<{
+  firstName: string;
+  facilityName?: string;
+  totalJobs: number;
+  activeJobs: number;
+}> = ({ firstName, facilityName, totalJobs, activeJobs }) => {
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="bg-gradient-to-r from-[#557a95] to-[#3d6080] rounded-2xl p-6 mb-6 text-white shadow-lg"
+    >
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="w-5 h-5 text-yellow-300" />
+            <p className="text-white/80 text-sm font-medium">{greeting}</p>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold">
+            Welcome back, {firstName}!
+          </h1>
+          {facilityName && (
+            <div className="flex items-center gap-1.5 mt-1.5 text-white/70 text-sm">
+              <Building2 className="w-4 h-4" />
+              <span>{facilityName}</span>
+            </div>
+          )}
+        </div>
+        <div className="flex gap-4">
+          <div className="bg-white/15 rounded-xl px-5 py-3 text-center backdrop-blur-sm">
+            <p className="text-2xl font-bold">{totalJobs}</p>
+            <p className="text-white/70 text-xs mt-0.5">Total Jobs</p>
+          </div>
+          <div className="bg-white/15 rounded-xl px-5 py-3 text-center backdrop-blur-sm">
+            <p className="text-2xl font-bold text-green-300">{activeJobs}</p>
+            <p className="text-white/70 text-xs mt-0.5">Active</p>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// ─── Detail Row ───────────────────────────────────────────────────────────────
 const DetailRow: React.FC<{
   icon: React.ReactNode;
   label: string;
@@ -131,7 +192,6 @@ const CaregiverDetailModal: React.FC<{
           subtitle="Applicant Profile"
           onClose={onClose}
         />
-
         <div className="p-6">
           {loading && (
             <div className="space-y-4 animate-pulse">
@@ -146,13 +206,11 @@ const CaregiverDetailModal: React.FC<{
               ))}
             </div>
           )}
-
           {!loading && !caregiver && (
             <p className="text-gray-500 text-center py-6">
               Could not load caregiver details.
             </p>
           )}
-
           {!loading && caregiver && (
             <div className="space-y-4">
               <DetailRow
@@ -205,7 +263,6 @@ const CaregiverDetailModal: React.FC<{
             </div>
           )}
         </div>
-
         <div className="px-6 pb-5">
           <button
             onClick={onClose}
@@ -229,7 +286,6 @@ const ApplicantsModal: React.FC<{
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-
   const [selectedCaregiver, setSelectedCaregiver] = useState<ICaregiverDetail | null>(null);
   const [caregiverLoading, setCaregiverLoading]   = useState(false);
   const [showCaregiverModal, setShowCaregiverModal] = useState(false);
@@ -312,7 +368,6 @@ const ApplicantsModal: React.FC<{
               }
               onClose={onClose}
             />
-
             <div className="overflow-y-auto flex-1 p-6">
               {loading && (
                 <div className="space-y-4">
@@ -328,9 +383,7 @@ const ApplicantsModal: React.FC<{
                   ))}
                 </div>
               )}
-
               {error && <ErrorBanner message={error} />}
-
               {!loading && !error && applications.length === 0 && (
                 <div className="text-center py-14">
                   <Users className="w-14 h-14 mx-auto mb-4 text-gray-200" />
@@ -340,13 +393,11 @@ const ApplicantsModal: React.FC<{
                   </p>
                 </div>
               )}
-
               {!loading && !error && applications.length > 0 && (
                 <div className="space-y-4">
                   {applications.map((app) => {
                     const status      = STATUS_CONFIG[app.status] ?? STATUS_CONFIG.PENDING;
                     const isActioning = actionLoading === app.id;
-
                     return (
                       <div
                         key={app.id}
@@ -361,14 +412,10 @@ const ApplicantsModal: React.FC<{
                               year: "numeric",
                             })}
                           </p>
-                          <span
-                            className={`text-xs font-semibold px-3 py-1 rounded-full border ${status.cls}`}
-                          >
+                          <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${status.cls}`}>
                             {status.label}
                           </span>
                         </div>
-
-                        {/* View Applicant Button */}
                         <button
                           onClick={() => handleViewApplicant(app.caregiver_id)}
                           className="w-full flex items-center justify-between bg-[#f0f5f9] hover:bg-[#e2ecf4] border border-[#c8dae8] rounded-xl px-4 py-3 transition-colors cursor-pointer group mb-4"
@@ -378,18 +425,12 @@ const ApplicantsModal: React.FC<{
                               <User className="w-4 h-4 text-[#557a95]" />
                             </div>
                             <div className="text-left">
-                              <p className="text-sm font-semibold text-[#557a95]">
-                                View Applicant
-                              </p>
-                              <p className="text-xs text-gray-400">
-                                See full caregiver details
-                              </p>
+                              <p className="text-sm font-semibold text-[#557a95]">View Applicant</p>
+                              <p className="text-xs text-gray-400">See full caregiver details</p>
                             </div>
                           </div>
                           <ChevronRight className="w-4 h-4 text-[#557a95] group-hover:translate-x-0.5 transition-transform" />
                         </button>
-
-                        {/* Action buttons — PENDING only */}
                         {app.status === "PENDING" && (
                           <div className="flex gap-3">
                             {(["accept", "reject"] as const).map((action) => {
@@ -418,15 +459,11 @@ const ApplicantsModal: React.FC<{
                             })}
                           </div>
                         )}
-
-                        {/* Accepted confirmation */}
                         {app.status === "ACCEPTED" && (
                           <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
                             <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
                             <div>
-                              <p className="text-sm font-semibold text-green-700">
-                                Application Accepted
-                              </p>
+                              <p className="text-sm font-semibold text-green-700">Application Accepted</p>
                               {app.acceptedAt && (
                                 <p className="text-xs text-green-600">
                                   on{" "}
@@ -440,15 +477,11 @@ const ApplicantsModal: React.FC<{
                             </div>
                           </div>
                         )}
-
-                        {/* Rejected confirmation */}
                         {app.status === "REJECTED" && (
                           <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
                             <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                             <div>
-                              <p className="text-sm font-semibold text-red-600">
-                                Application Rejected
-                              </p>
+                              <p className="text-sm font-semibold text-red-600">Application Rejected</p>
                               {app.rejectedAt && (
                                 <p className="text-xs text-red-500">
                                   on{" "}
@@ -471,7 +504,6 @@ const ApplicantsModal: React.FC<{
           </motion.div>
         </motion.div>
       </AnimatePresence>
-
       {showCaregiverModal && (
         <CaregiverDetailModal
           caregiver={selectedCaregiver}
@@ -487,9 +519,6 @@ const ApplicantsModal: React.FC<{
 };
 
 // ─── Edit Job Modal ───────────────────────────────────────────────────────────
-const INPUT_CLS =
-  "w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 text-sm focus:outline-none focus:border-[#557a95] transition-colors";
-
 const EditJobModal: React.FC<{
   job: IJob;
   adultHomeId: string;
@@ -497,23 +526,24 @@ const EditJobModal: React.FC<{
   onSaved: (updated: IJob) => void;
 }> = ({ job, adultHomeId, onClose, onSaved }) => {
   const [form, setForm] = useState<ICreateJob>({
-    job_role: job.job_role,
-    job_type: job.job_type,
-    start_date: job.start_date.slice(0, 10),
-    end_date: job.end_date.slice(0, 10),
-    shift_start: job.shift_start,
-    shift_end: job.shift_end,
-    payment_rate: job.payment_rate,
-    staff_needed: job.staff_needed,
-    certificates_needed: job.certificates_needed,
-    is_urgent: job.is_urgent,
-    adult_home_id: adultHomeId,
+    job_role:             job.job_role,
+    job_type:             job.job_type,
+    start_date:           job.start_date.slice(0, 10),
+    end_date:             job.end_date.slice(0, 10),
+    shift_start:          job.shift_start,
+    shift_end:            job.shift_end,
+    payment_rate:         job.payment_rate,
+    staff_needed:         job.staff_needed,
+    certificates_needed:  job.certificates_needed,
+    is_urgent:            job.is_urgent,
+    adult_home_id:        adultHomeId,
+    job_description:      job.job_description ?? "",   // ← fixed
   });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type } = e.target;
     setForm((prev) => ({
@@ -538,12 +568,13 @@ const EditJobModal: React.FC<{
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!form.job_role.trim())                              return setError("Job role is required");
-    if (!form.start_date || !form.end_date)                 return setError("Dates are required");
-    if (form.start_date > form.end_date)                    return setError("End date must be after start date");
-    if (!form.shift_start || !form.shift_end)               return setError("Shift times are required");
-    if (!form.payment_rate || isNaN(Number(form.payment_rate)))
-                                                            return setError("Valid payment rate is required");
+    if (!form.job_role.trim())                                    return setError("Job role is required");
+    if (!form.job_description.trim())                             return setError("Job description is required");
+    if (!form.start_date || !form.end_date)                       return setError("Dates are required");
+    if (form.start_date > form.end_date)                          return setError("End date must be after start date");
+    if (!form.shift_start || !form.shift_end)                     return setError("Shift times are required");
+    if (!form.payment_rate || isNaN(Number(form.payment_rate)))   return setError("Valid payment rate is required");
+
     setLoading(true);
     try {
       const payload = {
@@ -588,11 +619,11 @@ const EditJobModal: React.FC<{
             subtitle="Update the details for this posting"
             onClose={onClose}
           />
-
           <form
             onSubmit={handleSubmit}
             className="px-8 py-6 flex flex-col gap-4 overflow-y-auto flex-1"
           >
+            {/* Job Role + Job Type */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-gray-700">
@@ -625,83 +656,66 @@ const EditJobModal: React.FC<{
               </div>
             </div>
 
+            {/* Job Description */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-gray-700">
+                Job Description <span className="text-[#e68a1f]">*</span>
+              </label>
+              <textarea
+                name="job_description"
+                value={form.job_description}
+                onChange={handleChange}
+                placeholder="Describe the role, responsibilities, and requirements..."
+                rows={3}
+                required
+                className={`${INPUT_CLS} resize-none`}
+              />
+            </div>
+
+            {/* Dates */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-gray-700">
                   Start Date <span className="text-[#e68a1f]">*</span>
                 </label>
-                <input
-                  type="date"
-                  name="start_date"
-                  value={form.start_date}
-                  onChange={handleChange}
-                  required
-                  className={INPUT_CLS}
-                />
+                <input type="date" name="start_date" value={form.start_date} onChange={handleChange} required className={INPUT_CLS} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-gray-700">
                   End Date <span className="text-[#e68a1f]">*</span>
                 </label>
-                <input
-                  type="date"
-                  name="end_date"
-                  value={form.end_date}
-                  onChange={handleChange}
-                  required
-                  className={INPUT_CLS}
-                />
+                <input type="date" name="end_date" value={form.end_date} onChange={handleChange} required className={INPUT_CLS} />
               </div>
             </div>
 
+            {/* Shift */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-gray-700">
                   Shift Start <span className="text-[#e68a1f]">*</span>
                 </label>
-                <input
-                  type="time"
-                  name="shift_start"
-                  value={form.shift_start}
-                  onChange={handleChange}
-                  required
-                  className={INPUT_CLS}
-                />
+                <input type="time" name="shift_start" value={form.shift_start} onChange={handleChange} required className={INPUT_CLS} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-gray-700">
                   Shift End <span className="text-[#e68a1f]">*</span>
                 </label>
-                <input
-                  type="time"
-                  name="shift_end"
-                  value={form.shift_end}
-                  onChange={handleChange}
-                  required
-                  className={INPUT_CLS}
-                />
+                <input type="time" name="shift_end" value={form.shift_end} onChange={handleChange} required className={INPUT_CLS} />
               </div>
             </div>
 
+            {/* Payment + Staff */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-gray-700">
                   Payment Rate ($/hr) <span className="text-[#e68a1f]">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm pointer-events-none">
-                    $
-                  </span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm pointer-events-none">$</span>
                   <input
-                    type="number"
-                    name="payment_rate"
-                    value={form.payment_rate}
-                    onChange={handleChange}
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                    required
-                    className={`${INPUT_CLS} pl-7`}
+                    type="number" name="payment_rate" value={form.payment_rate}
+                    onChange={handleChange} placeholder="0.00" min="0" step="0.01"
+                    required className={`${INPUT_CLS} pl-7`}
                   />
                 </div>
               </div>
@@ -709,24 +723,13 @@ const EditJobModal: React.FC<{
                 <label className="text-sm font-semibold text-gray-700">
                   Staff Needed <span className="text-[#e68a1f]">*</span>
                 </label>
-                <input
-                  type="number"
-                  name="staff_needed"
-                  value={form.staff_needed}
-                  onChange={handleChange}
-                  min="1"
-                  max="100"
-                  required
-                  className={INPUT_CLS}
-                />
+                <input type="number" name="staff_needed" value={form.staff_needed} onChange={handleChange} min="1" max="100" required className={INPUT_CLS} />
               </div>
             </div>
 
             {/* Certificates */}
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-gray-700">
-                Certificates Required
-              </label>
+              <label className="text-sm font-semibold text-gray-700">Certificates Required</label>
               <div className="flex flex-wrap gap-2">
                 {CERTIFICATE_OPTIONS.map((cert) => {
                   const selected = form.certificates_needed.includes(cert);
@@ -766,9 +769,7 @@ const EditJobModal: React.FC<{
               </button>
               <div>
                 <p className="text-sm font-semibold text-gray-700">Mark as Urgent</p>
-                <p className="text-xs text-gray-400">
-                  This job will be highlighted to available staff
-                </p>
+                <p className="text-xs text-gray-400">This job will be highlighted to available staff</p>
               </div>
             </div>
 
@@ -845,12 +846,9 @@ const DeleteConfirmModal: React.FC<{
             </h3>
           </div>
           <p className="text-gray-600 mb-4">
-            Are you sure you want to delete <strong>"{job.job_role}"</strong>?
-            This action cannot be undone.
+            Are you sure you want to delete <strong>"{job.job_role}"</strong>? This action cannot be undone.
           </p>
-
           {error && <ErrorBanner message={error} />}
-
           <div className="flex gap-3 mt-4">
             <button
               onClick={onClose}
@@ -880,6 +878,19 @@ const DeleteConfirmModal: React.FC<{
   );
 };
 
+// ─── Status Badge Map ─────────────────────────────────────────────────────────
+const STATUS_BADGE: Record<string, React.ReactNode> = {
+  Active: (
+    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">Active</span>
+  ),
+  Filled: (
+    <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium">Filled</span>
+  ),
+  Urgent: (
+    <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-medium">🔴 Urgent</span>
+  ),
+};
+
 // ─── Job Card ─────────────────────────────────────────────────────────────────
 type ProviderJobCardProps = {
   job: IJob;
@@ -888,24 +899,6 @@ type ProviderJobCardProps = {
   onEdit: (job: IJob) => void;
   onDelete: (job: IJob) => void;
   onToggleFilled: (job: IJob, filled: boolean) => void;
-};
-
-const STATUS_BADGE: Record<string, React.ReactNode> = {
-  Active: (
-    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">
-      Active
-    </span>
-  ),
-  Filled: (
-    <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium">
-      Filled
-    </span>
-  ),
-  Urgent: (
-    <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-medium">
-      🔴 Urgent
-    </span>
-  ),
 };
 
 const JobCardComponent: React.FC<ProviderJobCardProps> = ({
@@ -918,7 +911,13 @@ const JobCardComponent: React.FC<ProviderJobCardProps> = ({
   const status = getJobStatus(job);
 
   return (
-    <div className="w-full border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white hover:shadow-lg transition-shadow">
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 12 }}
+      className="w-full border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white hover:shadow-lg transition-shadow"
+    >
       <JobCardHeader
         jobRole={job.job_role}
         jobType={formatJobType(job.job_type)}
@@ -938,13 +937,36 @@ const JobCardComponent: React.FC<ProviderJobCardProps> = ({
       </div>
 
       <div className="p-4 space-y-3">
+        {/* Dates — more visible */}
+        <div className="bg-[#f0f5f9] border border-[#c8dae8] rounded-lg px-3 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-[#557a95]">
+            <Clock className="w-4 h-4" />
+            <span className="text-xs font-semibold">Duration</span>
+          </div>
+          <span className="text-xs font-semibold text-gray-700">
+            {formatDate(job.start_date)} → {formatDate(job.end_date)}
+          </span>
+        </div>
+
         <InfoRow
           icon={<Clock className="h-5 w-5" />}
           label="Shift"
           value={`${formatTime(job.shift_start)} – ${formatTime(job.shift_end)}`}
         />
 
-        {/* Certificates */}
+        {/* Job Description preview */}
+        {job.job_description && (
+          <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+            <div className="flex items-center gap-1.5 mb-1">
+              <FileText className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-xs font-semibold text-gray-400">Description</span>
+            </div>
+            <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+              {job.job_description}
+            </p>
+          </div>
+        )}
+
         <InfoRow
           icon={<CheckCircle className="h-5 w-5" />}
           label="Certificates Required"
@@ -961,9 +983,7 @@ const JobCardComponent: React.FC<ProviderJobCardProps> = ({
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-blue-600" />
-            <span className="font-semibold text-blue-900">
-              {job.staff_needed} Staff Needed
-            </span>
+            <span className="font-semibold text-blue-900">{job.staff_needed} Staff Needed</span>
           </div>
           <button
             onClick={() => onViewApplicants(job)}
@@ -977,16 +997,10 @@ const JobCardComponent: React.FC<ProviderJobCardProps> = ({
         {/* Filled toggle */}
         <div
           className={`rounded-lg p-3 flex items-center justify-between border ${
-            job.is_filled
-              ? "bg-gray-50 border-gray-200"
-              : "bg-green-50 border-green-200"
+            job.is_filled ? "bg-gray-50 border-gray-200" : "bg-green-50 border-green-200"
           }`}
         >
-          <span
-            className={`text-sm font-semibold ${
-              job.is_filled ? "text-gray-500" : "text-green-700"
-            }`}
-          >
+          <span className={`text-sm font-semibold ${job.is_filled ? "text-gray-500" : "text-green-700"}`}>
             {job.is_filled ? "Position Filled" : "Position Open"}
           </span>
           <button
@@ -1004,38 +1018,30 @@ const JobCardComponent: React.FC<ProviderJobCardProps> = ({
         </div>
       </div>
 
-      <div className="px-4 pb-4 pt-2">
-        <div className="flex items-center text-gray-500 mb-3 text-sm">
-          <Clock className="mr-1 w-4 h-4" />
-          <span>
-            {formatDate(job.start_date)} → {formatDate(job.end_date)}
-          </span>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => onViewApplicants(job)}
-            className="flex-1 bg-[#557A95] hover:bg-[#476a80] text-white font-semibold py-2 rounded-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <Eye className="w-4 h-4" />
-            Applicants
-          </button>
-          <button
-            onClick={() => onEdit(job)}
-            className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-3 py-2 rounded-md transition-colors cursor-pointer"
-            aria-label="Edit job"
-          >
-            <Edit className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onDelete(job)}
-            className="bg-white border border-red-300 hover:bg-red-50 text-red-600 font-medium px-3 py-2 rounded-md transition-colors cursor-pointer"
-            aria-label="Delete job"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+      <div className="px-4 pb-4 pt-2 flex gap-2">
+        <button
+          onClick={() => onViewApplicants(job)}
+          className="flex-1 bg-[#557A95] hover:bg-[#476a80] text-white font-semibold py-2 rounded-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <Eye className="w-4 h-4" />
+          Applicants
+        </button>
+        <button
+          onClick={() => onEdit(job)}
+          className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-3 py-2 rounded-md transition-colors cursor-pointer"
+          aria-label="Edit job"
+        >
+          <Edit className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onDelete(job)}
+          className="bg-white border border-red-300 hover:bg-red-50 text-red-600 font-medium px-3 py-2 rounded-md transition-colors cursor-pointer"
+          aria-label="Delete job"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -1043,26 +1049,55 @@ const JobCard = React.memo(JobCardComponent);
 
 // ─── Main Provider Dashboard ──────────────────────────────────────────────────
 const ProviderDashboard: React.FC = () => {
-  const navigate     = useNavigate();
-  const { user }     = useAuth();
+  const navigate = useNavigate();
+  const { user }  = useAuth();
+
+  // Consolidated adultHomeId extraction
   const adultHomeId: string =
-    user?.adultHomeRepresentative?.adultHomeId ?? user?.profile?.adultHomeId ?? "";
+    user?.adultHomeRepresentative?.adultHomeId ??
+    user?.profile?.adultHomeId ??
+    "";
+
+  const firstName: string =
+    user?.adultHomeRepresentative?.firstName ??
+    user?.profile?.firstName ??
+    user?.username ??
+    "there";
+
+  const facilityName: string | undefined =
+    user?.adultHomeRepresentative?.facilityName ??
+    user?.profile?.facilityName;
 
   const [jobs, setJobs]       = useState<IJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
 
-  const [query, setQuery]             = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedStatus, setSelectedStatus]               = useState<string[]>([]);
-  const [selectedEmploymentType, setSelectedEmploymentType] = useState<string[]>([]);
-  const [sortBy, setSortBy]           = useState<"latest" | "oldest">("latest");
+  const [query, setQuery]                                           = useState("");
+  const [showFilters, setShowFilters]                               = useState(false);
+  const [selectedStatus, setSelectedStatus]                         = useState<string[]>([]);
+  const [selectedEmploymentType, setSelectedEmploymentType]         = useState<string[]>([]);
+  const [sortBy, setSortBy]                                         = useState<"latest" | "oldest">("latest");
 
-  const [jobToDelete, setJobToDelete]       = useState<IJob | null>(null);
-  const [deleteLoading, setDeleteLoading]   = useState(false);
-  const [deleteError, setDeleteError]       = useState<string | null>(null);
-  const [jobToEdit, setJobToEdit]           = useState<IJob | null>(null);
+  const [jobToDelete, setJobToDelete]           = useState<IJob | null>(null);
+  const [deleteLoading, setDeleteLoading]       = useState(false);
+  const [deleteError, setDeleteError]           = useState<string | null>(null);
+  const [jobToEdit, setJobToEdit]               = useState<IJob | null>(null);
   const [jobForApplicants, setJobForApplicants] = useState<IJob | null>(null);
+
+  // Guard: no facility linked
+  if (user && !adultHomeId) {
+    return (
+      <div className="min-h-screen bg-[#F3F6F9] flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl shadow-2xl p-10 max-w-md w-full text-center">
+          <div className="text-5xl mb-4">⚠️</div>
+          <h2 className="text-lg font-bold text-gray-800 mb-2">Facility Not Linked</h2>
+          <p className="text-sm text-gray-500">
+            Your account is not linked to a facility. Please contact support to resolve this.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!adultHomeId) return;
@@ -1072,11 +1107,7 @@ const ProviderDashboard: React.FC = () => {
       .finally(() => setLoading(false));
   }, [adultHomeId]);
 
-  const toggleArray = (
-    arr: string[],
-    setter: (v: string[]) => void,
-    value: string
-  ) =>
+  const toggleArray = (arr: string[], setter: (v: string[]) => void, value: string) =>
     arr.includes(value)
       ? setter(arr.filter((a) => a !== value))
       : setter([...arr, value]);
@@ -1094,43 +1125,34 @@ const ProviderDashboard: React.FC = () => {
       setJobToDelete(null);
     } catch (err: any) {
       const msg = err.response?.data?.message;
-      setDeleteError(
-        Array.isArray(msg) ? msg[0] : msg || "Failed to delete job. Please try again."
-      );
+      setDeleteError(Array.isArray(msg) ? msg[0] : msg || "Failed to delete job. Please try again.");
     } finally {
       setDeleteLoading(false);
     }
   };
 
   const handleToggleFilled = async (job: IJob, filled: boolean) => {
-    // Optimistic update
     setJobs((prev) =>
       prev.map((j) => (j.id === job.id ? { ...j, is_filled: filled } : j))
     );
     try {
       await updateJobIsFilled(job.id, adultHomeId, filled);
     } catch {
-      // Roll back
       setJobs((prev) =>
         prev.map((j) => (j.id === job.id ? { ...j, is_filled: !filled } : j))
       );
     }
   };
 
-  // Single pass for stats + filtered list
   const { filtered, stats } = useMemo(() => {
     const q = query.trim().toLowerCase();
     let out = [...jobs];
-
     if (q) out = out.filter((j) => j.job_role.toLowerCase().includes(q));
     if (selectedStatus.length > 0)
       out = out.filter((j) => selectedStatus.includes(getJobStatus(j)));
     if (selectedEmploymentType.length > 0)
       out = out.filter((j) => selectedEmploymentType.includes(j.job_type));
-
     if (sortBy === "oldest") out = out.reverse();
-
-    const totalStaffNeeded = jobs.reduce((sum, j) => sum + j.staff_needed, 0);
 
     return {
       filtered: out,
@@ -1138,7 +1160,7 @@ const ProviderDashboard: React.FC = () => {
         total:       jobs.length,
         active:      jobs.filter((j) => !j.is_filled).length,
         urgent:      jobs.filter((j) => j.is_urgent && !j.is_filled).length,
-        staffNeeded: totalStaffNeeded,
+        staffNeeded: jobs.reduce((sum, j) => sum + j.staff_needed, 0),
       },
     };
   }, [jobs, query, selectedStatus, selectedEmploymentType, sortBy]);
@@ -1146,21 +1168,32 @@ const ProviderDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F3F6F9] p-6">
 
+      {/* Greeting Header */}
+      <GreetingHeader
+        firstName={firstName}
+        facilityName={facilityName}
+        totalJobs={stats.total}
+        activeJobs={stats.active}
+      />
+
       {/* Stats Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Total Jobs",         value: stats.total,       border: "border-[#557A95]" },
           { label: "Active Jobs",        value: stats.active,      border: "border-green-500" },
           { label: "Total Staff Needed", value: stats.staffNeeded, border: "border-blue-500"  },
           { label: "Urgent Jobs",        value: stats.urgent,      border: "border-[#e68a1f]" },
-        ].map(({ label, value, border }) => (
-          <div
+        ].map(({ label, value, border }, i) => (
+          <motion.div
             key={label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.07 }}
             className={`bg-white rounded-xl shadow-sm p-4 border-l-4 ${border}`}
           >
             <p className="text-gray-600 text-sm">{label}</p>
             <p className="text-2xl font-bold text-gray-800">{value}</p>
-          </div>
+          </motion.div>
         ))}
       </div>
 
@@ -1198,7 +1231,7 @@ const ProviderDashboard: React.FC = () => {
             <span className="hidden md:inline text-sm">Filters</span>
           </button>
           <button
-            onClick={() => navigate("/provider/post-job")}
+            onClick={() => navigate("/provider/postjob")}  // ← fixed route
             className="flex items-center gap-2 bg-[#e68a1f] hover:bg-[#d47d1a] text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -1212,37 +1245,22 @@ const ProviderDashboard: React.FC = () => {
 
       <div className="grid grid-cols-12 gap-6">
 
-        {/* Sidebar */}
-        <div
-          className={`col-span-12 md:col-span-3 ${
-            !showFilters ? "hidden md:block" : "block"
-          }`}
-        >
+        {/* Sidebar Filters */}
+        <div className={`col-span-12 md:col-span-3 ${!showFilters ? "hidden md:block" : "block"}`}>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 h-fit">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-lg text-[#557A95]">Filters</h3>
-              <button
-                className="text-gray-500 md:hidden cursor-pointer"
-                onClick={() => setShowFilters(false)}
-              >
-                ✕
-              </button>
+              <button className="text-gray-500 md:hidden cursor-pointer" onClick={() => setShowFilters(false)}>✕</button>
             </div>
-
             <div className="mb-4">
               <h4 className="font-semibold text-gray-700 mb-2 text-sm">Status</h4>
               <div className="space-y-2">
                 {FILTERS.status.map((item) => (
-                  <label
-                    key={item}
-                    className="flex items-center gap-2 text-gray-600 text-sm cursor-pointer"
-                  >
+                  <label key={item} className="flex items-center gap-2 text-gray-600 text-sm cursor-pointer">
                     <input
                       type="checkbox"
                       checked={selectedStatus.includes(item)}
-                      onChange={() =>
-                        toggleArray(selectedStatus, setSelectedStatus, item)
-                      }
+                      onChange={() => toggleArray(selectedStatus, setSelectedStatus, item)}
                       className="h-4 w-4 text-[#557A95] rounded"
                     />
                     {item}
@@ -1250,27 +1268,15 @@ const ProviderDashboard: React.FC = () => {
                 ))}
               </div>
             </div>
-
             <div className="mb-4">
-              <h4 className="font-semibold text-gray-700 mb-2 text-sm">
-                Employment Type
-              </h4>
+              <h4 className="font-semibold text-gray-700 mb-2 text-sm">Employment Type</h4>
               <div className="space-y-2">
                 {FILTERS.employmentType.map((item) => (
-                  <label
-                    key={item}
-                    className="flex items-center gap-2 text-gray-600 text-sm cursor-pointer"
-                  >
+                  <label key={item} className="flex items-center gap-2 text-gray-600 text-sm cursor-pointer">
                     <input
                       type="checkbox"
                       checked={selectedEmploymentType.includes(item)}
-                      onChange={() =>
-                        toggleArray(
-                          selectedEmploymentType,
-                          setSelectedEmploymentType,
-                          item
-                        )
-                      }
+                      onChange={() => toggleArray(selectedEmploymentType, setSelectedEmploymentType, item)}
                       className="h-4 w-4 text-[#557A95] rounded"
                     />
                     {formatJobType(item)}
@@ -1278,13 +1284,9 @@ const ProviderDashboard: React.FC = () => {
                 ))}
               </div>
             </div>
-
             <div className="mt-4 flex gap-2">
               <button
-                onClick={() => {
-                  setSelectedStatus([]);
-                  setSelectedEmploymentType([]);
-                }}
+                onClick={() => { setSelectedStatus([]); setSelectedEmploymentType([]); }}
                 className="flex-1 bg-gray-100 hover:bg-gray-200 py-2 rounded-md text-sm cursor-pointer"
               >
                 Clear
@@ -1303,45 +1305,48 @@ const ProviderDashboard: React.FC = () => {
         <div className="col-span-12 md:col-span-9">
           {loading && (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(3)].map((_, i) => (
-                <SkeletonCard key={i} withActions />
-              ))}
+              {[...Array(3)].map((_, i) => <SkeletonCard key={i} withActions />)}
             </div>
           )}
 
           {!loading && !error && filtered.length === 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-xl shadow-sm p-12 text-center"
+            >
               <Briefcase className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                No jobs found
-              </h3>
-              <p className="text-gray-500 mb-4">
-                Try adjusting your filters or post a new job
-              </p>
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">No jobs found</h3>
+              <p className="text-gray-500 mb-4">Try adjusting your filters or post a new job</p>
               <button
-                onClick={() => navigate("/provider/post-job")}
+                onClick={() => navigate("/provider/postjob")}  // ← fixed route
                 className="bg-[#e68a1f] hover:bg-[#d47d1a] text-white px-6 py-2 rounded-lg font-medium inline-flex items-center gap-2 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 Post Your First Job
               </button>
-            </div>
+            </motion.div>
           )}
 
           {!loading && !error && filtered.length > 0 && (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((job) => (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  adultHomeId={adultHomeId}
-                  onViewApplicants={setJobForApplicants}
-                  onEdit={setJobToEdit}
-                  onDelete={setJobToDelete}
-                  onToggleFilled={handleToggleFilled}
-                />
-              ))}
-            </div>
+            <motion.div
+              layout
+              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              <AnimatePresence>
+                {filtered.map((job) => (
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    adultHomeId={adultHomeId}
+                    onViewApplicants={setJobForApplicants}
+                    onEdit={setJobToEdit}
+                    onDelete={setJobToDelete}
+                    onToggleFilled={handleToggleFilled}
+                  />
+                ))}
+              </AnimatePresence>
+            </motion.div>
           )}
         </div>
       </div>
@@ -1367,10 +1372,7 @@ const ProviderDashboard: React.FC = () => {
           job={jobToDelete}
           loading={deleteLoading}
           error={deleteError}
-          onClose={() => {
-            setJobToDelete(null);
-            setDeleteError(null);
-          }}
+          onClose={() => { setJobToDelete(null); setDeleteError(null); }}
           onConfirm={handleDeleteConfirm}
         />
       )}

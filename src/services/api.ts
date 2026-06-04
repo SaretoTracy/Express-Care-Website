@@ -24,14 +24,7 @@ type RefreshQueueEntry = {
 let isRefreshing = false;
 let refreshQueue: RefreshQueueEntry[] = [];
 
-/*
--------------------------------------------------
-MAIN AXIOS INSTANCE
-baseURL is "/" so the Vite proxy path "/api" is
-preserved and forwarded to:
-https://api.expresscareteam.com/api/...
--------------------------------------------------
-*/
+
 
 export const api = axios.create({
   baseURL: "https://api.expresscareteam.com",
