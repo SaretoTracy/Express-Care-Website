@@ -11,6 +11,7 @@ export interface ICreateJob {
   certificates_needed: string[];
   is_urgent: boolean;
   adult_home_id: string;
+  job_description: string; // ← added, required by server
 }
 
 // ─── Single Job Response (GET /jobs/:jobId) ───────────────────────────────────
@@ -27,6 +28,7 @@ export interface IJob {
   certificates_needed: string[];
   is_urgent: boolean;
   is_filled: boolean;
+  job_description: string;
   createdAt: string;
   updatedAt: string;
 }

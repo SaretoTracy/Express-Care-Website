@@ -11,8 +11,8 @@ import { AuthCard, AuthInput, AuthButton } from "../../UI/AuthCard";
 import { useAuth } from "../../context/AuthContext";
 
 const LoginSchema = z.object({
-  username: z.string().min(1, "Invalid email address"),
-  password: z.string().min(1, "Password is required"),
+  username: z.string().email("Enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type LoginType = z.infer<typeof LoginSchema>;
@@ -35,58 +35,49 @@ export const LoginPage = () => {
   const handleLoginSubmit = async (data: LoginType) => {
     try {
       setLoading(true);
-
       const response = await loginUser(data);
+      console.log("[Login] full response:", JSON.stringify(response, null, 2));
 
       const role =
         response.roles?.[0]?.name?.toUpperCase() || "CAREGIVER";
 
-      let profile = null;
-
-      if (role === "CAREGIVER" && response.caregiver) {
-        profile = response.caregiver;
-      }
-
-      if (
-        role === "HOMEREPRESENTATIVE" &&
-        response.adultHomeRepresentative
-      ) {
-        profile = response.adultHomeRepresentative;
-      }
-
       const normalizedUser = {
-        id: response.id,
-        username: response.username,
+        ...response,
+        accessToken: undefined,
+        refreshToken: undefined,
         role,
-        profile,
+        profile:
+          role === "CAREGIVER"
+            ? response.caregiver ?? null
+            : response.adultHomeRepresentative ?? null,
       };
 
-      // 🔥 Use context instead of localStorage directly
       setAuthData(
         normalizedUser,
         response.accessToken,
-        response.refreshToken || ""
+        response.refreshToken ?? ""
       );
 
       toast.success("Login successful!");
 
       if (role === "CAREGIVER") navigate("/caregiver/dashboard");
-      else if (role === "HOMEREPRESENTATIVE")
-        navigate("/provider/dashboard");
+      else if (role === "HOMEREPRESENTATIVE") navigate("/provider/dashboard");
       else if (role === "ADMIN") navigate("/admin");
       else navigate("/");
     } catch (error: any) {
-      toast.error(error.message || "Login failed");
+      console.error("[Login] error:", error);
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Login failed. Please try again.";
+      toast.error(Array.isArray(msg) ? msg[0] : msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const togglePasswordVisibility = () =>
-    setShowPassword(!showPassword);
-
   return (
-    <AuthCard title="Sign In" logo={logo}>
+    <AuthCard title="Welcome back" subtitle="Sign in to your account" logo={logo}>
       <form onSubmit={handleSubmit(handleLoginSubmit)}>
         <AuthInput
           label="Email"
@@ -97,7 +88,6 @@ export const LoginPage = () => {
           register={register}
           error={errors.username?.message}
         />
-
         <AuthInput
           label="Password"
           type={showPassword ? "text" : "password"}
@@ -106,11 +96,27 @@ export const LoginPage = () => {
           icon={<Lock size={18} />}
           register={register}
           error={errors.password?.message}
-          rightIcon={
-            showPassword ? <EyeOff size={18} /> : <Eye size={18} />
-          }
-          onRightIconClick={togglePasswordVisibility}
+          rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          onRightIconClick={() => setShowPassword((p) => !p)}
         />
+
+        {/* Forgot password link */}
+        <div className="flex justify-end -mt-2 mb-5">
+          <button
+            type="button"
+            onClick={() => navigate("/forgot-password")}
+            className="text-sm font-medium transition-colors duration-200"
+            style={{ color: "#557a95" }}
+            onMouseEnter={(e) =>
+              ((e.target as HTMLElement).style.color = "#f59e0b")
+            }
+            onMouseLeave={(e) =>
+              ((e.target as HTMLElement).style.color = "#557a95")
+            }
+          >
+            Forgot password?
+          </button>
+        </div>
 
         <AuthButton loading={loading} loadingText="Signing in...">
           <LogIn size={18} className="mr-2" />
