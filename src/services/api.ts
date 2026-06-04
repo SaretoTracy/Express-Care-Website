@@ -24,12 +24,11 @@ type RefreshQueueEntry = {
 let isRefreshing = false;
 let refreshQueue: RefreshQueueEntry[] = [];
 
-
-
 export const api = axios.create({
   baseURL: "https://api.expresscareteam.com",
   withCredentials: true,
 });
+
 /*
 -------------------------------------------------
 REQUEST INTERCEPTOR
@@ -183,27 +182,23 @@ api.interceptors.response.use(
       });
     }
 
-    /*
-    -------------------------------------------------
-    START TOKEN REFRESH
-    -------------------------------------------------
-    */
+ 
 
     originalRequest._retry = true;
     isRefreshing = true;
 
     try {
-      const refreshToken = localStorage.getItem("refreshToken");
+      
+      const csrfToken = await fetchCsrfToken();
 
-      if (!refreshToken) {
-        throw new Error("No refresh token available");
-      }
-
-      const response = await axios.post(
-        "/api/auth/refreshAccessToken",
-        { refreshToken },
-        { withCredentials: true }
-      );
+     const response = await api.post(
+  "/api/auth/refreshAccessToken",
+  {},
+  {
+    headers: { "X-CSRF-Token": csrfToken },
+    _retry: true, 
+  } as any
+);
 
       const newAccessToken = response.data?.accessToken;
 
@@ -211,10 +206,13 @@ api.interceptors.response.use(
         throw new Error("No access token returned");
       }
 
+      // Save new token
       localStorage.setItem("accessToken", newAccessToken);
 
+      // Resolve queued requests
       processQueue(newAccessToken);
 
+      // Retry original request with new token
       if (!originalRequest.headers) {
         originalRequest.headers = {};
       }
