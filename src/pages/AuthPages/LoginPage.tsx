@@ -35,22 +35,16 @@ export const LoginPage = () => {
   const handleLoginSubmit = async (data: LoginType) => {
     try {
       setLoading(true);
-
       const response = await loginUser(data);
-
-    
       console.log("[Login] full response:", JSON.stringify(response, null, 2));
 
       const role =
         response.roles?.[0]?.name?.toUpperCase() || "CAREGIVER";
 
       const normalizedUser = {
-   
         ...response,
-       
         accessToken: undefined,
         refreshToken: undefined,
-     
         role,
         profile:
           role === "CAREGIVER"
@@ -83,7 +77,7 @@ export const LoginPage = () => {
   };
 
   return (
-    <AuthCard title="Sign In" logo={logo}>
+    <AuthCard title="Welcome back" subtitle="Sign in to your account" logo={logo}>
       <form onSubmit={handleSubmit(handleLoginSubmit)}>
         <AuthInput
           label="Email"
@@ -105,6 +99,25 @@ export const LoginPage = () => {
           rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           onRightIconClick={() => setShowPassword((p) => !p)}
         />
+
+        {/* Forgot password link */}
+        <div className="flex justify-end -mt-2 mb-5">
+          <button
+            type="button"
+            onClick={() => navigate("/forgot-password")}
+            className="text-sm font-medium transition-colors duration-200"
+            style={{ color: "#557a95" }}
+            onMouseEnter={(e) =>
+              ((e.target as HTMLElement).style.color = "#f59e0b")
+            }
+            onMouseLeave={(e) =>
+              ((e.target as HTMLElement).style.color = "#557a95")
+            }
+          >
+            Forgot password?
+          </button>
+        </div>
+
         <AuthButton loading={loading} loadingText="Signing in...">
           <LogIn size={18} className="mr-2" />
           Sign in
